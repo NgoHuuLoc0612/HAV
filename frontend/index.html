@@ -1,0 +1,2897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAV · Heuristic & Algorithms Visualizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   HAV DESIGN SYSTEM — Dark Brutalist Industrial
+═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --bg0:       #0a0a0c;
+  --bg1:       #111116;
+  --bg2:       #17171f;
+  --bg3:       #1e1e28;
+  --border:    #2a2a38;
+  --border2:   #3a3a50;
+  --text0:     #e8e8f0;
+  --text1:     #9898b8;
+  --text2:     #5a5a78;
+  --accent:    #6c63ff;
+  --accent2:   #9d8fff;
+  --neon-g:    #39ffa0;
+  --neon-b:    #38d9ff;
+  --neon-y:    #ffde5a;
+  --neon-r:    #ff5a7e;
+  --neon-p:    #c77dff;
+  --visited:   #1a3050;
+  --open:      #0d2a1a;
+  --path:      #2a1a00;
+  --wall:      #1a1a22;
+  --start-c:   #39ffa0;
+  --end-c:     #ff5a7e;
+  --cell-size: 22px;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-ui:   'Syne', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg0);
+  color: var(--text0);
+  font-family: var(--font-ui);
+  overflow: hidden;
+}
+
+/* ─── Layout ───────────────────────────────────────────────────────────────── */
+#app {
+  display: grid;
+  grid-template-rows: 52px 1fr;
+  grid-template-columns: 280px 1fr 260px;
+  height: 100vh;
+  gap: 0;
+}
+
+/* ─── Topbar ───────────────────────────────────────────────────────────────── */
+#topbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0 20px;
+  background: var(--bg1);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  z-index: 50;
+}
+
+.logo {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--text0);
+}
+.logo span { color: var(--accent2); }
+
+.mode-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--bg0);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px;
+}
+.mode-tab {
+  padding: 5px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text2);
+  border: none;
+  background: transparent;
+  transition: all 0.15s;
+  font-family: var(--font-mono);
+}
+.mode-tab.active {
+  background: var(--accent);
+  color: #fff;
+}
+.mode-tab:hover:not(.active) { color: var(--text0); }
+
+.topbar-stats {
+  margin-left: auto;
+  display: flex;
+  gap: 20px;
+}
+.stat-pill {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.stat-pill b { color: var(--neon-b); font-size: 12px; }
+
+.native-badge {
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  font-family: var(--font-mono);
+  background: var(--neon-g);
+  color: #000;
+}
+.native-badge.py { background: var(--neon-y); }
+
+/* ─── Sidebar Left ────────────────────────────────────────────────────────── */
+#sidebar-left {
+  background: var(--bg1);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+#sidebar-left::-webkit-scrollbar { width: 4px; }
+#sidebar-left::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.section-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text2);
+  padding: 0 2px 6px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono);
+}
+
+.control-group { display: flex; flex-direction: column; gap: 6px; }
+
+.control-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+label {
+  font-size: 11px;
+  color: var(--text1);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+select, input[type=number], input[type=range] {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text0);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+select { padding: 5px 8px; width: 100%; cursor: pointer; }
+select:focus, input:focus { border-color: var(--accent); }
+input[type=number] { padding: 5px 8px; width: 70px; }
+input[type=range] {
+  width: 100%;
+  accent-color: var(--accent);
+  height: 4px;
+  cursor: pointer;
+}
+
+.btn {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: all 0.15s;
+  background: var(--bg2);
+  color: var(--text0);
+}
+.btn:hover { border-color: var(--accent); color: var(--accent2); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover { background: var(--accent2); border-color: var(--accent2); }
+.btn.danger { border-color: var(--neon-r); color: var(--neon-r); }
+.btn.neon-g { border-color: var(--neon-g); color: var(--neon-g); }
+.btn.neon-b { border-color: var(--neon-b); color: var(--neon-b); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-row { display: flex; gap: 6px; }
+.btn-row .btn { flex: 1; }
+
+/* Speed control */
+.speed-row { display: flex; align-items: center; gap: 8px; }
+.speed-row label { min-width: 50px; }
+.speed-val { font-family: var(--font-mono); font-size: 10px; color: var(--neon-b); min-width: 36px; text-align: right; }
+
+/* ─── Canvas Area ─────────────────────────────────────────────────────────── */
+#canvas-area {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Grid */
+#grid-wrap {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+#maze-canvas, #path-canvas, #overlay-canvas {
+  position: absolute;
+  image-rendering: pixelated;
+  touch-action: none;
+}
+
+/* Sort canvas */
+#sort-canvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+/* 3D canvas */
+#three-canvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: none;
+}
+
+/* Graph SVG */
+#graph-svg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: none;
+}
+
+/* ─── Sidebar Right ───────────────────────────────────────────────────────── */
+#sidebar-right {
+  background: var(--bg1);
+  border-left: 1px solid var(--border);
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+#sidebar-right::-webkit-scrollbar { width: 4px; }
+#sidebar-right::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* Metrics */
+.metric-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.metric-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.metric-label {
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text2);
+  font-family: var(--font-mono);
+}
+.metric-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--neon-b);
+  font-family: var(--font-mono);
+}
+.metric-value.green { color: var(--neon-g); }
+.metric-value.yellow { color: var(--neon-y); }
+.metric-value.red { color: var(--neon-r); }
+
+/* Progress bar */
+.progress-bar {
+  width: 100%;
+  height: 3px;
+  background: var(--bg3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--neon-b) 100%);
+  border-radius: 2px;
+  transition: width 0.1s;
+  width: 0%;
+}
+
+/* Log */
+#log-panel {
+  background: var(--bg0);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  max-height: 180px;
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.6;
+}
+#log-panel::-webkit-scrollbar { width: 3px; }
+#log-panel::-webkit-scrollbar-thumb { background: var(--border2); }
+.log-entry { color: var(--text2); }
+.log-entry.ok { color: var(--neon-g); }
+.log-entry.err { color: var(--neon-r); }
+.log-entry.info { color: var(--neon-b); }
+
+/* Algorithm info card */
+.algo-info {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+}
+.algo-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent2);
+  margin-bottom: 6px;
+}
+.algo-complexity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.complexity-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-family: var(--font-mono);
+}
+.complexity-key { color: var(--text2); }
+.complexity-val { color: var(--neon-y); }
+
+/* Color legend */
+.legend { display: flex; flex-direction: column; gap: 5px; }
+.legend-item { display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--text1); font-family: var(--font-mono); }
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+/* ─── Overlay messages ────────────────────────────────────────────────────── */
+#status-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--bg1);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 20px 30px;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 10;
+}
+#status-overlay.show { opacity: 1; }
+#status-overlay .msg { font-size: 14px; font-weight: 700; color: var(--neon-g); font-family: var(--font-mono); }
+#status-overlay .sub { font-size: 11px; color: var(--text2); margin-top: 4px; font-family: var(--font-mono); }
+
+/* ─── 3D Toggle ────────────────────────────────────────────────────────────── */
+.view-toggle {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  background: var(--bg0);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-left: auto;
+}
+.view-btn {
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text2);
+  border: none;
+  background: transparent;
+  font-family: var(--font-mono);
+  transition: all 0.15s;
+}
+.view-btn.active { background: var(--bg3); color: var(--neon-b); }
+
+/* ─── Sort bars ────────────────────────────────────────────────────────────── */
+.bar-compare { fill: var(--neon-y) !important; }
+.bar-swap    { fill: var(--neon-r) !important; }
+.bar-sorted  { fill: var(--neon-g) !important; }
+.bar-pivot   { fill: var(--neon-p) !important; }
+.bar-normal  { fill: var(--accent) !important; opacity: 0.7; }
+
+/* ─── Graph nodes/edges ────────────────────────────────────────────────────── */
+.g-edge { stroke: var(--border2); stroke-width: 2; fill: none; }
+.g-edge.active { stroke: var(--neon-b); stroke-width: 3; }
+.g-edge.mst { stroke: var(--neon-g); stroke-width: 3; }
+.g-node { cursor: pointer; }
+.g-node circle { fill: var(--bg3); stroke: var(--border2); stroke-width: 2; }
+.g-node circle.visited { fill: var(--visited); stroke: var(--neon-b); }
+.g-node circle.active  { fill: var(--accent); stroke: var(--accent2); }
+.g-node text { fill: var(--text0); font-size: 11px; font-family: var(--font-mono); text-anchor: middle; dominant-baseline: central; }
+.g-edge-weight { fill: var(--neon-y); font-size: 9px; font-family: var(--font-mono); text-anchor: middle; }
+
+/* ─── Animations ───────────────────────────────────────────────────────────── */
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(108, 99, 255, 0.4); }
+  70%  { box-shadow: 0 0 0 10px rgba(108, 99, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(108, 99, 255, 0); }
+}
+.running { animation: pulse-ring 1s infinite; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fadeInUp 0.3s ease forwards; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- ═══ TOPBAR ═══ -->
+  <header id="topbar">
+    <div class="logo">HAV <span>FRAMEWORK</span></div>
+    <div class="mode-tabs">
+      <button class="mode-tab active" data-mode="maze">MAZE</button>
+      <button class="mode-tab" data-mode="path">PATH</button>
+      <button class="mode-tab" data-mode="sort">SORT</button>
+      <button class="mode-tab" data-mode="graph">GRAPH</button>
+    </div>
+    <div class="view-toggle">
+      <button class="view-btn active" data-view="2d">2D</button>
+      <button class="view-btn" data-view="3d">3D</button>
+    </div>
+    <div class="topbar-stats">
+      <div class="stat-pill">STEPS <b id="stat-steps">0</b></div>
+      <div class="stat-pill">TIME <b id="stat-time">0ms</b></div>
+      <div class="stat-pill">ENGINE <b id="stat-native" class="native-badge">—</b></div>
+    </div>
+  </header>
+
+  <!-- ═══ LEFT SIDEBAR ═══ -->
+  <aside id="sidebar-left">
+    <!-- MAZE controls -->
+    <div id="ctrl-maze">
+      <div class="section-label">Maze Generation</div>
+      <div class="control-group">
+        <div class="control-row">
+          <label>Algorithm</label>
+          <select id="maze-algo">
+            <option value="growing_tree">Growing-Tree</option>
+            <option value="recursive_division">Recursive Division</option>
+            <option value="wilson">Wilson's</option>
+            <option value="aldous_broder">Aldous-Broder</option>
+            <option value="sidewinder">Sidewinder</option>
+            <option value="binary_tree">Binary Tree</option>
+            <option value="hunt_and_kill">Hunt-and-Kill</option>
+            <option value="eller">Eller's</option>
+            <option value="kruskal_maze">Kruskal Maze</option>
+          </select>
+        </div>
+        <div id="gt-strategy-row" class="control-row">
+          <label>GT Strategy</label>
+          <select id="gt-strategy">
+            <option value="NEWEST">Newest (DFS)</option>
+            <option value="OLDEST">Oldest (BFS-like)</option>
+            <option value="RANDOM">Random (Prim-like)</option>
+            <option value="MIX">Mix (Hybrid)</option>
+            <option value="MIDDLE">Middle</option>
+          </select>
+        </div>
+        <div id="mix-ratio-row" class="control-row" style="display:none">
+          <label>Mix Ratio</label>
+          <div style="flex:1; display:flex; align-items:center; gap:6px;">
+            <input type="range" id="mix-ratio" min="0" max="1" step="0.05" value="0.5">
+            <span class="speed-val" id="mix-ratio-val">0.50</span>
+          </div>
+        </div>
+        <div class="control-row">
+          <label>Rows</label>
+          <input type="number" id="maze-rows" value="25" min="5" max="61" step="2">
+        </div>
+        <div class="control-row">
+          <label>Cols</label>
+          <input type="number" id="maze-cols" value="41" min="5" max="101" step="2">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" id="btn-generate">GENERATE</button>
+        <button class="btn danger" id="btn-clear-maze">CLEAR</button>
+      </div>
+    </div>
+
+    <!-- PATH controls -->
+    <div id="ctrl-path" style="display:none">
+      <div class="section-label">Pathfinding</div>
+      <div class="control-group">
+        <div class="control-row">
+          <label>Algorithm</label>
+          <select id="path-algo">
+            <option value="astar">A*</option>
+            <option value="dijkstra">Dijkstra</option>
+            <option value="bfs">BFS</option>
+            <option value="dfs">DFS</option>
+            <option value="jps">Jump Point Search</option>
+            <option value="bidir_astar">Bidir A*</option>
+            <option value="greedy_bfs">Greedy BFS</option>
+            <option value="ida_star">IDA*</option>
+            <option value="iddfs">IDDFS</option>
+            <option value="theta_star">Theta* (Any-Angle)</option>
+            <option value="beam_search">Beam Search</option>
+            <option value="bidir_bfs">Bidir BFS</option>
+          </select>
+        </div>
+        <div class="control-row">
+          <label>Heuristic</label>
+          <select id="path-heuristic">
+            <option value="MANHATTAN">Manhattan</option>
+            <option value="EUCLIDEAN">Euclidean</option>
+            <option value="CHEBYSHEV">Chebyshev</option>
+            <option value="OCTILE">Octile</option>
+          </select>
+        </div>
+        <div class="control-row">
+          <label>Diagonal</label>
+          <input type="checkbox" id="path-diag" style="accent-color:var(--accent);">
+        </div>
+        <div class="control-row">
+          <label>Grid Size</label>
+          <input type="number" id="path-size" value="30" min="10" max="80">
+        </div>
+      </div>
+      <div class="section-label" style="margin-top:8px">Draw Mode</div>
+      <div class="btn-row">
+        <button class="btn" id="draw-wall" onclick="setDrawMode('wall')">WALL</button>
+        <button class="btn" id="draw-weight" onclick="setDrawMode('weight')">WEIGHT</button>
+        <button class="btn" id="draw-erase" onclick="setDrawMode('erase')">ERASE</button>
+      </div>
+      <div class="btn-row" style="margin-top:6px">
+        <button class="btn primary" id="btn-find-path">FIND PATH</button>
+        <button class="btn danger" id="btn-clear-path">CLEAR</button>
+      </div>
+    </div>
+
+    <!-- SORT controls -->
+    <div id="ctrl-sort" style="display:none">
+      <div class="section-label">Sorting</div>
+      <div class="control-group">
+        <div class="control-row">
+          <label>Algorithm</label>
+          <select id="sort-algo">
+            <option value="bubble">Bubble Sort</option>
+            <option value="insertion">Insertion Sort</option>
+            <option value="selection">Selection Sort</option>
+            <option value="merge">Merge Sort</option>
+            <option value="quick">Quick Sort</option>
+            <option value="heap">Heap Sort</option>
+            <option value="shell">Shell Sort</option>
+            <option value="radix">Radix Sort</option>
+            <option value="counting">Counting Sort</option>
+            <option value="timsort">Tim Sort</option>
+            <optgroup label="─── Additional ───">
+            <option value="cocktail">Cocktail Shaker</option>
+            <option value="gnome">Gnome Sort</option>
+            <option value="comb">Comb Sort</option>
+            <option value="cycle">Cycle Sort</option>
+            <option value="pancake">Pancake Sort</option>
+            <option value="bitonic">Bitonic Sort</option>
+            <option value="oddeven">Odd-Even Sort</option>
+            <option value="stooge">Stooge Sort</option>
+            <option value="intro">Introsort</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="control-row">
+          <label>Array Size</label>
+          <input type="number" id="sort-size" value="80" min="10" max="300">
+        </div>
+        <div class="control-row">
+          <label>Input Type</label>
+          <select id="sort-input">
+            <option value="random">Random</option>
+            <option value="nearly">Nearly Sorted</option>
+            <option value="reversed">Reversed</option>
+            <option value="few_unique">Few Unique</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" id="btn-sort">RUN SORT</button>
+        <button class="btn" id="btn-new-arr">NEW ARRAY</button>
+      </div>
+    </div>
+
+    <!-- GRAPH controls -->
+    <div id="ctrl-graph" style="display:none">
+      <div class="section-label">Graph Algorithms</div>
+      <div class="control-group">
+        <div class="control-row">
+          <label>Algorithm</label>
+          <select id="graph-algo">
+            <option value="kruskal">Kruskal MST</option>
+            <option value="prim">Prim MST</option>
+            <option value="bellman_ford">Bellman-Ford</option>
+            <option value="floyd_warshall">Floyd-Warshall</option>
+            <option value="tarjan">Tarjan SCC</option>
+            <option value="topological">Topological Sort</option>
+            <optgroup label="─── MST ───">
+            <option value="boruvka">Boruvka MST</option>
+            </optgroup>
+            <optgroup label="─── Shortest Path ───">
+            <option value="dijkstra_sssp">Dijkstra SSSP</option>
+            <option value="johnson">Johnson APSP</option>
+            </optgroup>
+            <optgroup label="─── Connectivity ───">
+            <option value="kosaraju">Kosaraju SCC</option>
+            <option value="artic_bridge">Articulation + Bridges</option>
+            <option value="bipartite">Bipartite Check</option>
+            </optgroup>
+            <optgroup label="─── Paths ───">
+            <option value="euler">Euler Circuit</option>
+            <option value="hamiltonian">Hamiltonian Path</option>
+            </optgroup>
+            <optgroup label="─── Other ───">
+            <option value="coloring">Greedy Coloring</option>
+            <option value="ford_fulkerson">Ford-Fulkerson Flow</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="control-row">
+          <label>Nodes</label>
+          <input type="number" id="graph-nodes" value="12" min="4" max="30">
+        </div>
+        <div class="control-row">
+          <label>Directed</label>
+          <input type="checkbox" id="graph-directed" style="accent-color:var(--accent);">
+        </div>
+        <div class="control-row">
+          <label>Density</label>
+          <div style="flex:1; display:flex; align-items:center; gap:6px;">
+            <input type="range" id="graph-density" min="1" max="3" step="1" value="2">
+            <span class="speed-val" id="graph-density-val">Med</span>
+          </div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" id="btn-run-graph">RUN</button>
+        <button class="btn" id="btn-new-graph">NEW GRAPH</button>
+      </div>
+    </div>
+
+    <!-- Common: Speed + Compare -->
+    <div style="margin-top:auto">
+      <div class="section-label">Playback</div>
+      <div class="speed-row">
+        <label>Speed</label>
+        <input type="range" id="speed-slider" min="0" max="100" value="70">
+        <span class="speed-val" id="speed-label">70%</span>
+      </div>
+      <div class="btn-row" style="margin-top:8px">
+        <button class="btn" id="btn-pause">⏸ PAUSE</button>
+        <button class="btn" id="btn-step">STEP →</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══ CANVAS AREA ═══ -->
+  <main id="canvas-area">
+    <div id="grid-wrap">
+      <canvas id="maze-canvas"></canvas>
+      <canvas id="path-canvas"></canvas>
+      <canvas id="overlay-canvas"></canvas>
+      <canvas id="sort-canvas" style="display:none"></canvas>
+      <svg id="graph-svg"></svg>
+      <canvas id="three-canvas"></canvas>
+    </div>
+    <div id="status-overlay">
+      <div class="msg" id="overlay-msg">PATH FOUND</div>
+      <div class="sub" id="overlay-sub">Length: 0 · Cost: 0.0</div>
+    </div>
+  </main>
+
+  <!-- ═══ RIGHT SIDEBAR ═══ -->
+  <aside id="sidebar-right">
+    <div class="section-label">Metrics</div>
+    <div class="metric-grid">
+      <div class="metric-card">
+        <div class="metric-label">Visited</div>
+        <div class="metric-value green" id="m-visited">0</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Path Len</div>
+        <div class="metric-value" id="m-path">—</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Comparisons</div>
+        <div class="metric-value yellow" id="m-compare">0</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Swaps</div>
+        <div class="metric-value red" id="m-swaps">0</div>
+      </div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+
+    <div class="section-label">Algorithm</div>
+    <div class="algo-info" id="algo-info-card">
+      <div class="algo-name" id="algo-name">A* Search</div>
+      <div class="algo-complexity">
+        <div class="complexity-row"><span class="complexity-key">Time</span><span class="complexity-val" id="algo-time-c">O(b^d)</span></div>
+        <div class="complexity-row"><span class="complexity-key">Space</span><span class="complexity-val" id="algo-space-c">O(b^d)</span></div>
+        <div class="complexity-row"><span class="complexity-key">Optimal</span><span class="complexity-val" id="algo-optimal">Yes</span></div>
+        <div class="complexity-row"><span class="complexity-key">Complete</span><span class="complexity-val" id="algo-complete">Yes</span></div>
+      </div>
+    </div>
+
+    <div class="section-label">Legend</div>
+    <div class="legend" id="legend-panel">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--neon-g)"></div>Start</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--neon-r)"></div>End</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1a3050"></div>Visited</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#0d2a1a"></div>Open Set</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--neon-y)"></div>Path</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#2a2a38"></div>Wall</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1a1a3a"></div>Weight ×3</div>
+    </div>
+
+    <div class="section-label">Log</div>
+    <div id="log-panel"></div>
+  </aside>
+</div>
+
+<!-- THREE.js for 3D viz -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+'use strict';
+// ═══════════════════════════════════════════════════════════════════════════
+//  HAV Frontend Engine
+// ═══════════════════════════════════════════════════════════════════════════
+
+const API_BASE = 'http://127.0.0.1:7432/api';
+const USE_API  = false;  // Set to true when Python server is running
+
+// ─── State ────────────────────────────────────────────────────────────────
+const State = {
+  mode: 'maze',
+  view: '2d',
+  running: false,
+  paused: false,
+  stepMode: false,
+  stepIndex: 0,
+  animHandle: null,
+  speed: 70,
+  drawMode: 'wall',
+  mouseDown: false,
+
+  // Maze
+  maze: { grid: null, steps: [], rows: 0, cols: 0 },
+
+  // Path
+  path: { grid: null, startR: 2, startC: 2, endR: 28, endC: 28, result: null },
+
+  // Sort
+  sort: { data: [], steps: [], currentStep: 0 },
+
+  // Graph
+  graph: { nodes: [], edges: [], steps: [], result: null },
+};
+
+// Algorithm info DB
+const ALGO_INFO = {
+  astar:         { name:'A* Search',         time:'O(b^d)',      space:'O(b^d)',   optimal:'Yes',  complete:'Yes'  },
+  dijkstra:      { name:'Dijkstra',           time:'O(E log V)',  space:'O(V)',     optimal:'Yes',  complete:'Yes'  },
+  bfs:           { name:'Breadth-First',      time:'O(V+E)',      space:'O(V)',     optimal:'Yes',  complete:'Yes'  },
+  dfs:           { name:'Depth-First',        time:'O(V+E)',      space:'O(V)',     optimal:'No',   complete:'No'   },
+  jps:           { name:'Jump Point Search',  time:'O(n log n)',  space:'O(n)',     optimal:'Yes',  complete:'Yes'  },
+  bidir_astar:   { name:'Bidirectional A*',   time:'O(b^(d/2))',  space:'O(b^(d/2))', optimal:'Yes', complete:'Yes'},
+  growing_tree:  { name:'Growing Tree',       time:'O(N)',        space:'O(N)',     optimal:'N/A',  complete:'N/A'  },
+  wilson:        { name:"Wilson's Algorithm", time:'O(N²)',       space:'O(N)',     optimal:'N/A',  complete:'N/A'  },
+  recursive_division: { name:'Recursive Division', time:'O(N)',   space:'O(log N)',optimal:'N/A',  complete:'N/A'  },
+  bubble:        { name:'Bubble Sort',        time:'O(n²)',       space:'O(1)',     optimal:'No',   complete:'Yes'  },
+  insertion:     { name:'Insertion Sort',     time:'O(n²)',       space:'O(1)',     optimal:'Yes*', complete:'Yes'  },
+  selection:     { name:'Selection Sort',     time:'O(n²)',       space:'O(1)',     optimal:'No',   complete:'Yes'  },
+  merge:         { name:'Merge Sort',         time:'O(n log n)',  space:'O(n)',     optimal:'Yes',  complete:'Yes'  },
+  quick:         { name:'Quick Sort',         time:'O(n log n)',  space:'O(log n)', optimal:'No',  complete:'Yes'  },
+  heap:          { name:'Heap Sort',          time:'O(n log n)',  space:'O(1)',     optimal:'No',   complete:'Yes'  },
+  shell:         { name:'Shell Sort',         time:'O(n^1.25)',   space:'O(1)',     optimal:'No',   complete:'Yes'  },
+  radix:         { name:'Radix Sort',         time:'O(nk)',       space:'O(n+k)',   optimal:'Yes',  complete:'Yes'  },
+  counting:      { name:'Counting Sort',      time:'O(n+k)',      space:'O(k)',     optimal:'Yes',  complete:'Yes'  },
+  timsort:       { name:'Tim Sort',           time:'O(n log n)',  space:'O(n)',     optimal:'Yes',  complete:'Yes'  },
+  kruskal:       { name:"Kruskal's MST",      time:'O(E log E)',  space:'O(V)',     optimal:'Yes',  complete:'Yes'  },
+  prim:          { name:"Prim's MST",         time:'O(E log V)',  space:'O(V)',     optimal:'Yes',  complete:'Yes'  },
+  bellman_ford:  { name:'Bellman-Ford',       time:'O(VE)',       space:'O(V)',     optimal:'Yes',  complete:'Yes'  },
+  floyd_warshall:{ name:'Floyd-Warshall',     time:'O(V³)',       space:'O(V²)',    optimal:'Yes',  complete:'Yes'  },
+  tarjan:        { name:'Tarjan SCC',         time:'O(V+E)',      space:'O(V)',     optimal:'N/A',  complete:'Yes'  },
+
+  // New path
+  greedy_bfs:    { name:'Greedy Best-First',    time:'O(b^d)',      space:'O(b^d)',   optimal:'No',   complete:'No'   },
+  ida_star:      { name:'IDA*',                 time:'O(b^d)',      space:'O(d)',     optimal:'Yes',  complete:'Yes'  },
+  iddfs:         { name:'Iterative DFS',         time:'O(b^d)',      space:'O(d)',     optimal:'No',   complete:'Yes'  },
+  theta_star:    { name:'Theta* Any-Angle',      time:'O(n log n)',  space:'O(n)',     optimal:'Yes',  complete:'Yes'  },
+  beam_search:   { name:'Beam Search',           time:'O(b·W)',      space:'O(W)',     optimal:'No',   complete:'No'   },
+  bidir_bfs:     { name:'Bidirectional BFS',     time:'O(b^(d/2))',  space:'O(b^(d/2))', optimal:'Yes', complete:'Yes'},
+  // New maze
+  aldous_broder: { name:'Aldous-Broder',         time:'O(N²)',       space:'O(N)',     optimal:'N/A',  complete:'N/A'  },
+  sidewinder:    { name:'Sidewinder',            time:'O(N)',        space:'O(cols)',  optimal:'N/A',  complete:'N/A'  },
+  binary_tree:   { name:'Binary Tree',           time:'O(N)',        space:'O(1)',     optimal:'N/A',  complete:'N/A'  },
+  hunt_and_kill: { name:'Hunt-and-Kill',         time:'O(N²)',       space:'O(N)',     optimal:'N/A',  complete:'N/A'  },
+  eller:         { name:"Eller's Algorithm",     time:'O(N)',        space:'O(cols)',  optimal:'N/A',  complete:'N/A'  },
+  kruskal_maze:  { name:'Kruskal Maze',          time:'O(N log N)',  space:'O(N)',     optimal:'N/A',  complete:'N/A'  },
+  // New sort
+  cocktail:      { name:'Cocktail Shaker',       time:'O(n²)',       space:'O(1)',     optimal:'No',   complete:'Yes'  },
+  gnome:         { name:'Gnome Sort',            time:'O(n²)',       space:'O(1)',     optimal:'No',   complete:'Yes'  },
+  comb:          { name:'Comb Sort',             time:'O(n log n)',  space:'O(1)',     optimal:'No',   complete:'Yes'  },
+  cycle:         { name:'Cycle Sort',            time:'O(n²)',       space:'O(1)',     optimal:'No*',  complete:'Yes'  },
+  pancake:       { name:'Pancake Sort',          time:'O(n²)',       space:'O(1)',     optimal:'No',   complete:'Yes'  },
+  bitonic:       { name:'Bitonic Sort',          time:'O(n log² n)', space:'O(log n)', optimal:'No',  complete:'Yes'  },
+  oddeven:       { name:'Odd-Even Sort',         time:'O(n²)',       space:'O(1)',     optimal:'No',   complete:'Yes'  },
+  stooge:        { name:'Stooge Sort',           time:'O(n^2.71)',   space:'O(n)',     optimal:'No',   complete:'Yes'  },
+  intro:         { name:'Introsort',             time:'O(n log n)',  space:'O(log n)', optimal:'No',  complete:'Yes'  },
+  // New graph
+  boruvka:       { name:"Boruvka's MST",         time:'O(E log V)',  space:'O(V)',     optimal:'Yes',  complete:'Yes'  },
+  dijkstra_sssp: { name:'Dijkstra SSSP',         time:'O(E log V)',  space:'O(V)',     optimal:'Yes',  complete:'Yes'  },
+  johnson:       { name:"Johnson's APSP",        time:'O(VE+V² log V)', space:'O(V²)', optimal:'Yes', complete:'Yes'  },
+  kosaraju:      { name:'Kosaraju SCC',          time:'O(V+E)',      space:'O(V)',     optimal:'N/A',  complete:'Yes'  },
+  artic_bridge:  { name:'Articulation+Bridges',  time:'O(V+E)',      space:'O(V)',     optimal:'N/A',  complete:'Yes'  },
+  bipartite:     { name:'Bipartite Check',       time:'O(V+E)',      space:'O(V)',     optimal:'N/A',  complete:'Yes'  },
+  euler:         { name:'Euler Circuit',         time:'O(E)',        space:'O(E)',     optimal:'N/A',  complete:'Yes'  },
+  hamiltonian:   { name:'Hamiltonian Path',      time:'O(n!)',       space:'O(n)',     optimal:'N/A',  complete:'Yes'  },
+  coloring:      { name:'Greedy Coloring',       time:'O(V+E)',      space:'O(V)',     optimal:'No',   complete:'Yes'  },
+  ford_fulkerson:{ name:'Ford-Fulkerson Flow',   time:'O(VE²)',      space:'O(V²)',    optimal:'Yes',  complete:'Yes'  },
+  topological:   { name:'Topological Sort',   time:'O(V+E)',      space:'O(V)',     optimal:'N/A',  complete:'Yes'  },
+};
+
+// ─── Canvas setup ─────────────────────────────────────────────────────────
+const mazeCanvas    = document.getElementById('maze-canvas');
+const pathCanvas    = document.getElementById('path-canvas');
+const overlayCanvas = document.getElementById('overlay-canvas');
+const sortCanvas    = document.getElementById('sort-canvas');
+const graphSVG      = document.getElementById('graph-svg');
+const threeCanvas   = document.getElementById('three-canvas');
+
+const mctx = mazeCanvas.getContext('2d');
+const pctx = pathCanvas.getContext('2d');
+const octx = overlayCanvas.getContext('2d');
+const sctx = sortCanvas.getContext('2d');
+
+// ─── Colors ───────────────────────────────────────────────────────────────
+const C = {
+  bg0:    '#0a0a0c', bg1: '#111116', bg2: '#17171f', bg3: '#1e1e28',
+  border: '#2a2a38', border2: '#3a3a50',
+  text0: '#e8e8f0', text1: '#9898b8', text2: '#5a5a78',
+  accent: '#6c63ff', accent2: '#9d8fff',
+  neonG: '#39ffa0', neonB: '#38d9ff', neonY: '#ffde5a',
+  neonR: '#ff5a7e', neonP: '#c77dff',
+  visited: '#1a3050', open: '#0d2a1a', path: '#2a1a00',
+  wall: '#1a1a22', weight: '#1a1a3a',
+  start: '#39ffa0', end: '#ff5a7e',
+  carve: '#2a2a42',
+};
+
+// ─── Logging ──────────────────────────────────────────────────────────────
+function log(msg, type = '') {
+  const el = document.getElementById('log-panel');
+  const div = document.createElement('div');
+  div.className = `log-entry ${type}`;
+  div.textContent = `[${new Date().toLocaleTimeString('en',{hour12:false})}] ${msg}`;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+  if (el.children.length > 100) el.removeChild(el.firstChild);
+}
+
+function setMetric(id, val) { document.getElementById(id).textContent = val; }
+
+function updateAlgoInfo(key) {
+  const info = ALGO_INFO[key] || {};
+  document.getElementById('algo-name').textContent    = info.name    || key;
+  document.getElementById('algo-time-c').textContent  = info.time    || '—';
+  document.getElementById('algo-space-c').textContent = info.space   || '—';
+  document.getElementById('algo-optimal').textContent = info.optimal || '—';
+  document.getElementById('algo-complete').textContent= info.complete|| '—';
+}
+
+function showOverlay(msg, sub) {
+  const ov = document.getElementById('status-overlay');
+  document.getElementById('overlay-msg').textContent = msg;
+  document.getElementById('overlay-sub').textContent = sub;
+  ov.classList.add('show');
+  setTimeout(() => ov.classList.remove('show'), 2500);
+}
+
+// ─── Mode / View switching ────────────────────────────────────────────────
+document.querySelectorAll('.mode-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.mode-tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    stopAnimation();
+    switchMode(t.dataset.mode);
+  });
+});
+
+document.querySelectorAll('.view-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.view-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    State.view = b.dataset.view;
+    if (State.view === '3d') init3D();
+    else exit3D();
+  });
+});
+
+function switchMode(mode) {
+  State.mode = mode;
+  ['ctrl-maze','ctrl-path','ctrl-sort','ctrl-graph'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  document.getElementById(`ctrl-${mode}`).style.display = 'block';
+
+  [mazeCanvas, pathCanvas, overlayCanvas].forEach(c => c.style.display = 'none');
+  sortCanvas.style.display = 'none';
+  graphSVG.style.display = 'none';
+
+  if (mode === 'maze') {
+    mazeCanvas.style.display = 'block';
+    overlayCanvas.style.display = 'block';
+    initMazeMode();
+  } else if (mode === 'path') {
+    pathCanvas.style.display = 'block';
+    overlayCanvas.style.display = 'block';
+    mazeCanvas.style.display = 'block';
+    initPathMode();
+  } else if (mode === 'sort') {
+    sortCanvas.style.display = 'block';
+    initSortMode();
+  } else if (mode === 'graph') {
+    graphSVG.style.display = 'block';
+    initGraphMode();
+  }
+  updateLegend(mode);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  PURE-JS ALGORITHM IMPLEMENTATIONS (no server needed)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Growing-Tree Maze (full JS implementation) ───────────────────────────
+function growingTree(rows, cols, strategy, mixRatio = 0.5) {
+  const WALL_N=1, WALL_S=2, WALL_W=4, WALL_E=8;
+  const DR=[-1,1,0,0], DC=[0,0,-1,1];
+  const WB=[WALL_N,WALL_S,WALL_W,WALL_E];
+  const OW=[WALL_S,WALL_N,WALL_E,WALL_W];
+
+  const grid = Array.from({length: rows}, () => new Uint8Array(cols).fill(0xF));
+  const visited = Array.from({length: rows}, () => new Uint8Array(cols));
+  const steps = [];
+  const active = [];
+
+  const rng = () => Math.random();
+  const rndInt = (lo, hi) => Math.floor(rng() * (hi - lo + 1)) + lo;
+  const shuffle = arr => { for(let i=arr.length-1;i>0;i--){ const j=rndInt(0,i);[arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; };
+
+  const visit = (r, c) => {
+    visited[r][c] = 1;
+    active.push([r, c]);
+    steps.push({type:'VISIT', r, c, walls: grid[r][c]});
+  };
+
+  visit(0, 0);
+
+  while (active.length) {
+    let idx;
+    switch (strategy) {
+      case 'NEWEST': idx = active.length - 1; break;
+      case 'OLDEST': idx = 0; break;
+      case 'RANDOM': idx = rndInt(0, active.length - 1); break;
+      case 'MIX':    idx = rng() < mixRatio ? active.length-1 : rndInt(0, active.length-1); break;
+      case 'MIDDLE': idx = Math.floor(active.length / 2); break;
+      default:       idx = active.length - 1;
+    }
+
+    const [cr, cc] = active[idx];
+    const dirs = shuffle([0,1,2,3]);
+    let carved = false;
+
+    for (const d of dirs) {
+      const nr = cr + DR[d], nc = cc + DC[d];
+      if (nr < 0 || nr >= rows || nc < 0 || nc >= cols || visited[nr][nc]) continue;
+      grid[cr][cc] &= ~WB[d];
+      grid[nr][nc] &= ~OW[d];
+      steps.push({type:'CARVE', r:cr, c:cc, r2:nr, c2:nc, walls:grid[cr][cc]});
+      visit(nr, nc);
+      carved = true;
+      break;
+    }
+
+    if (!carved) {
+      steps.push({type:'BACKTRACK', r:cr, c:cc, walls:grid[cr][cc]});
+      active.splice(idx, 1);
+    }
+  }
+
+  steps.push({type:'DONE', r:0, c:0, walls:0});
+  return {grid, steps, rows, cols};
+}
+
+function recursiveDivision(rows, cols) {
+  const WALL_N=1, WALL_S=2, WALL_W=4, WALL_E=8;
+  const grid = Array.from({length: rows}, () => new Uint8Array(cols));
+  // Set border walls
+  for(let r=0;r<rows;r++) { grid[r][0]|=WALL_W; grid[r][cols-1]|=WALL_E; }
+  for(let c=0;c<cols;c++) { grid[0][c]|=WALL_N; grid[rows-1][c]|=WALL_S; }
+  const steps = [];
+  const rndInt = (lo,hi) => Math.floor(Math.random()*(hi-lo+1))+lo;
+
+  function divide(r0,c0,r1,c1) {
+    const h=r1-r0+1, w=c1-c0+1;
+    if(h<=1||w<=1) return;
+    const horiz = h>w ? true : w>h ? false : rndInt(0,1)===0;
+    if(horiz) {
+      const wRow=rndInt(r0,r1-1), passC=rndInt(c0,c1);
+      for(let c=c0;c<=c1;c++){
+        if(c===passC) continue;
+        grid[wRow][c]|=WALL_S; grid[wRow+1][c]|=WALL_N;
+        steps.push({type:'WALL',r:wRow,c,walls:grid[wRow][c]});
+      }
+      divide(r0,c0,wRow,c1); divide(wRow+1,c0,r1,c1);
+    } else {
+      const wCol=rndInt(c0,c1-1), passR=rndInt(r0,r1);
+      for(let r=r0;r<=r1;r++){
+        if(r===passR) continue;
+        grid[r][wCol]|=WALL_E; grid[r][wCol+1]|=WALL_W;
+        steps.push({type:'WALL',r,c:wCol,walls:grid[r][wCol]});
+      }
+      divide(r0,c0,r1,wCol); divide(r0,wCol+1,r1,c1);
+    }
+  }
+
+  divide(0,0,rows-1,cols-1);
+  steps.push({type:'DONE',r:0,c:0,walls:0});
+  return {grid,steps,rows,cols};
+}
+
+function wilsonMaze(rows, cols) {
+  const WALL_N=1,WALL_S=2,WALL_W=4,WALL_E=8;
+  const DR=[-1,1,0,0],DC=[0,0,-1,1];
+  const WB=[WALL_N,WALL_S,WALL_W,WALL_E],OW=[WALL_S,WALL_N,WALL_E,WALL_W];
+  const grid=Array.from({length:rows},()=>new Uint8Array(cols).fill(0xF));
+  const inMaze=Array.from({length:rows},()=>new Uint8Array(cols));
+  const steps=[];
+  const ri=(lo,hi)=>Math.floor(Math.random()*(hi-lo+1))+lo;
+
+  inMaze[ri(0,rows-1)][ri(0,cols-1)]=1;
+  let cnt=1, total=rows*cols;
+
+  while(cnt<total){
+    let r=ri(0,rows-1),c=ri(0,cols-1);
+    while(inMaze[r][c]){r=ri(0,rows-1);c=ri(0,cols-1);}
+
+    const path=[[r,c]];
+    const pathDir=Array.from({length:rows},()=>new Int8Array(cols).fill(-1));
+    let cr=r,cc=c;
+
+    while(!inMaze[cr][cc]){
+      steps.push({type:'VISIT',r:cr,c:cc,walls:grid[cr][cc]});
+      let d=ri(0,3),nr=cr+DR[d],nc=cc+DC[d];
+      let tries=0;
+      while((nr<0||nr>=rows||nc<0||nc>=cols)&&++tries<20){d=ri(0,3);nr=cr+DR[d];nc=cc+DC[d];}
+      if(tries>=20) break;
+      pathDir[cr][cc]=d;
+      cr=nr;cc=nc;
+    }
+
+    cr=r;cc=c;
+    while(!inMaze[cr][cc]){
+      inMaze[cr][cc]=1; cnt++;
+      const d=pathDir[cr][cc]; if(d<0) break;
+      const nr=cr+DR[d],nc=cc+DC[d];
+      grid[cr][cc]&=~WB[d]; grid[nr][nc]&=~OW[d];
+      steps.push({type:'CARVE',r:cr,c:cc,r2:nr,c2:nc,walls:grid[cr][cc]});
+      cr=nr;cc=nc;
+    }
+  }
+
+  steps.push({type:'DONE',r:0,c:0,walls:0});
+  return {grid,steps,rows,cols};
+}
+
+// ─── Pathfinding Algorithms ───────────────────────────────────────────────
+
+function heuristic(r1,c1,r2,c2,type){
+  const dr=Math.abs(r1-r2),dc=Math.abs(c1-c2);
+  switch(type){
+    case 'MANHATTAN': return dr+dc;
+    case 'EUCLIDEAN': return Math.sqrt(dr*dr+dc*dc);
+    case 'CHEBYSHEV': return Math.max(dr,dc);
+    case 'OCTILE':    return (dr+dc)+(Math.SQRT2-2)*Math.min(dr,dc);
+    default: return dr+dc;
+  }
+}
+
+function aStarSearch(grid,sr,sc,er,ec,hType,diag){
+  const rows=grid.length,cols=grid[0].length;
+  const steps=[],path=[];
+  const g=Array.from({length:rows},()=>new Float64Array(cols).fill(Infinity));
+  const parent=Array.from({length:rows},()=>Array(cols).fill(null));
+  const closed=Array.from({length:rows},()=>new Uint8Array(cols));
+
+  const DR=diag?[-1,-1,-1,0,0,1,1,1]:[-1,1,0,0];
+  const DC=diag?[-1,0,1,-1,1,-1,0,1]:[0,0,-1,1];
+
+  // Min-heap (simple binary heap)
+  class Heap{
+    constructor(){this.d=[];}
+    push(item){this.d.push(item);this._up(this.d.length-1);}
+    pop(){const top=this.d[0];const last=this.d.pop();if(this.d.length){this.d[0]=last;this._down(0);}return top;}
+    get size(){return this.d.length;}
+    _up(i){const d=this.d;while(i>0){const p=(i-1)>>1;if(d[p][0]>d[i][0]){[d[p],d[i]]=[d[i],d[p]];i=p;}else break;}}
+    _down(i){const d=this.d,n=d.length;while(true){let s=i,l=2*i+1,r=2*i+2;if(l<n&&d[l][0]<d[s][0])s=l;if(r<n&&d[r][0]<d[s][0])s=r;if(s===i)break;[d[s],d[i]]=[d[i],d[s]];i=s;}}
+  }
+
+  const pq=new Heap();
+  g[sr][sc]=0;
+  const h0=heuristic(sr,sc,er,ec,hType);
+  pq.push([h0,sr,sc,0]);
+
+  while(pq.size){
+    const [fv,r,c,gv]=pq.pop();
+    if(gv>g[r][c]+1e-9) continue;
+    if(closed[r][c]) continue;
+    closed[r][c]=1;
+    const hv=heuristic(r,c,er,ec,hType);
+    steps.push({type:'VISIT',r,c,g:gv,h:hv,f:fv});
+
+    if(r===er&&c===ec){
+      let cur=[r,c];
+      while(cur){path.unshift({r:cur[0],c:cur[1]});cur=parent[cur[0]][cur[1]];}
+      return {found:true,cost:gv,path,steps};
+    }
+
+    for(let d=0;d<DR.length;d++){
+      const nr=r+DR[d],nc=c+DC[d];
+      if(nr<0||nr>=rows||nc<0||nc>=cols||grid[nr][nc]===1) continue;
+      if(closed[nr][nc]) continue;
+      const cost=(d>=4?Math.SQRT2:1)*(grid[nr][nc]===2?3:1);
+      const ng=g[r][c]+cost;
+      if(ng<g[nr][nc]){
+        g[nr][nc]=ng;parent[nr][nc]=[r,c];
+        const nh=heuristic(nr,nc,er,ec,hType);
+        pq.push([ng+nh,nr,nc,ng]);
+        steps.push({type:'OPEN',r:nr,c:nc,g:ng,h:nh,f:ng+nh});
+      }
+    }
+  }
+  return {found:false,path:[],steps};
+}
+
+function bfsSearch(grid,sr,sc,er,ec){
+  const rows=grid.length,cols=grid[0].length;
+  const steps=[],visited=Array.from({length:rows},()=>new Uint8Array(cols));
+  const parent=Array.from({length:rows},()=>Array(cols).fill(null));
+  const q=[[sr,sc]]; visited[sr][sc]=1; let head=0;
+  const DR=[-1,1,0,0],DC=[0,0,-1,1];
+  while(head<q.length){
+    const[r,c]=q[head++];
+    steps.push({type:'VISIT',r,c});
+    if(r===er&&c===ec){
+      const path=[];let cur=[r,c];
+      while(cur){path.unshift({r:cur[0],c:cur[1]});cur=parent[cur[0]][cur[1]];}
+      return{found:true,cost:path.length-1,path,steps};
+    }
+    for(let d=0;d<4;d++){
+      const nr=r+DR[d],nc=c+DC[d];
+      if(nr<0||nr>=rows||nc<0||nc>=cols||grid[nr][nc]===1||visited[nr][nc]) continue;
+      visited[nr][nc]=1;parent[nr][nc]=[r,c];q.push([nr,nc]);
+    }
+  }
+  return{found:false,path:[],steps};
+}
+
+function dfsSearch(grid,sr,sc,er,ec){
+  const rows=grid.length,cols=grid[0].length;
+  const steps=[],visited=Array.from({length:rows},()=>new Uint8Array(cols));
+  const parent=Array.from({length:rows},()=>Array(cols).fill(null));
+  const stk=[[sr,sc]];
+  const DR=[-1,1,0,0],DC=[0,0,-1,1];
+  while(stk.length){
+    const[r,c]=stk.pop();
+    if(visited[r][c]) continue;
+    visited[r][c]=1;
+    steps.push({type:'VISIT',r,c});
+    if(r===er&&c===ec){
+      const path=[];let cur=[r,c];
+      while(cur){path.unshift({r:cur[0],c:cur[1]});cur=parent[cur[0]][cur[1]];}
+      return{found:true,path,steps};
+    }
+    for(let d=0;d<4;d++){
+      const nr=r+DR[d],nc=c+DC[d];
+      if(nr<0||nr>=rows||nc<0||nc>=cols||grid[nr][nc]===1||visited[nr][nc]) continue;
+      parent[nr][nc]=[r,c];stk.push([nr,nc]);
+    }
+  }
+  return{found:false,path:[],steps};
+}
+
+function dijkstraSearch(grid,sr,sc,er,ec){ return aStarSearch(grid,sr,sc,er,ec,'ZERO',false); }
+
+function runPathAlgo(algo,grid,sr,sc,er,ec,hType,diag){
+  switch(algo){
+    case 'astar':       return aStarSearch(grid,sr,sc,er,ec,hType,diag);
+    case 'dijkstra':    return aStarSearch(grid,sr,sc,er,ec,'ZERO',false);
+    case 'bfs':         return bfsSearch(grid,sr,sc,er,ec);
+    case 'dfs':         return dfsSearch(grid,sr,sc,er,ec);
+    case 'jps':         return aStarSearch(grid,sr,sc,er,ec,'OCTILE',true);
+    case 'bidir_astar': return aStarSearch(grid,sr,sc,er,ec,hType,false);
+    case 'greedy_bfs':  return greedyBFSSearch(grid,sr,sc,er,ec,hType);
+    case 'ida_star':    return aStarSearch(grid,sr,sc,er,ec,hType,false); // JS IDA* approx
+    case 'iddfs':       return iddfsSearch(grid,sr,sc,er,ec);
+    case 'theta_star':  return thetaStarSearch(grid,sr,sc,er,ec);
+    case 'beam_search': return beamSearchPath(grid,sr,sc,er,ec,hType,5);
+    case 'bidir_bfs':   return bfsSearch(grid,sr,sc,er,ec); // bidir BFS fallback
+    default:            return aStarSearch(grid,sr,sc,er,ec,hType,diag);
+  }
+}
+
+// ─── Sort Algorithms ──────────────────────────────────────────────────────
+
+function generateSortData(size, type) {
+  let arr = Array.from({length: size}, (_,i) => i+1);
+  const shuffle = a => { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} };
+  if (type==='random')     { shuffle(arr); }
+  else if(type==='reversed'){ arr.reverse(); }
+  else if(type==='nearly')  { shuffle(arr); for(let i=0;i<Math.floor(size*0.1);i++){const j=Math.floor(Math.random()*size);[arr[i],arr[j]]=[arr[j],arr[i]];} arr.sort((a,b)=>a-b); shuffle(arr.slice(0,Math.floor(size*0.05))); }
+  else if(type==='few_unique'){ arr=Array.from({length:size},()=>Math.floor(Math.random()*5)+1); }
+  return arr;
+}
+
+
+// ─── Additional Maze Algorithms (JS) ─────────────────────────────────────────
+
+function aldousBroder(rows, cols) {
+  const WALL_N=1,WALL_S=2,WALL_W=4,WALL_E=8;
+  const DR=[-1,1,0,0],DC=[0,0,-1,1],WB=[WALL_N,WALL_S,WALL_W,WALL_E],OW=[WALL_S,WALL_N,WALL_E,WALL_W];
+  const grid=Array.from({length:rows},()=>new Uint8Array(cols).fill(0xF));
+  const vis=Array.from({length:rows},()=>new Uint8Array(cols));
+  const steps=[];const ri=(lo,hi)=>Math.floor(Math.random()*(hi-lo+1))+lo;
+  let r=ri(0,rows-1),c=ri(0,cols-1),cnt=1,total=rows*cols;
+  vis[r][c]=1;steps.push({type:'VISIT',r,c,walls:grid[r][c]});
+  while(cnt<total){
+    const d=ri(0,3),nr=r+DR[d],nc=c+DC[d];
+    if(nr<0||nr>=rows||nc<0||nc>=cols) continue;
+    if(!vis[nr][nc]){
+      grid[r][c]&=~WB[d];grid[nr][nc]&=~OW[d];
+      steps.push({type:'CARVE',r,c,r2:nr,c2:nc,walls:grid[r][c]});
+      vis[nr][nc]=1;cnt++;steps.push({type:'VISIT',r:nr,c:nc,walls:grid[nr][nc]});
+    } else {steps.push({type:'BACKTRACK',r,c,walls:grid[r][c]});}
+    r=nr;c=nc;
+  }
+  steps.push({type:'DONE',r:0,c:0,walls:0});
+  return{grid,steps,rows,cols};
+}
+
+function sidewinderMaze(rows,cols){
+  const WALL_N=1,WALL_S=2,WALL_W=4,WALL_E=8;
+  const grid=Array.from({length:rows},()=>new Uint8Array(cols).fill(0xF));
+  const steps=[];
+  for(let r=0;r<rows;++r){
+    let run=[];
+    for(let c=0;c<cols;++c){
+      run.push(c);
+      const carveE=(c<cols-1)&&(r===0||Math.random()<0.5);
+      if(carveE){grid[r][c]&=~WALL_E;grid[r][c+1]&=~WALL_W;steps.push({type:'CARVE',r,c,r2:r,c2:c+1,walls:grid[r][c]});}
+      else{if(r>0){const pick=run[Math.floor(Math.random()*run.length)];grid[r][pick]&=~WALL_N;grid[r-1][pick]&=~WALL_S;steps.push({type:'CARVE',r,c:pick,r2:r-1,c2:pick,walls:grid[r][pick]});}run=[];}
+      steps.push({type:'VISIT',r,c,walls:grid[r][c]});
+    }
+  }
+  steps.push({type:'DONE',r:0,c:0,walls:0});
+  return{grid,steps,rows,cols};
+}
+
+function binaryTreeMaze(rows,cols){
+  const WALL_N=1,WALL_S=2,WALL_W=4,WALL_E=8;
+  const grid=Array.from({length:rows},()=>new Uint8Array(cols).fill(0xF));
+  const steps=[];
+  for(let r=0;r<rows;++r)
+    for(let c=0;c<cols;++c){
+      steps.push({type:'VISIT',r,c,walls:grid[r][c]});
+      const canN=r>0,canW=c>0;
+      if(!canN&&!canW) continue;
+      if(canN&&canW){
+        if(Math.random()<0.5){grid[r][c]&=~WALL_N;grid[r-1][c]&=~WALL_S;steps.push({type:'CARVE',r,c,r2:r-1,c2:c,walls:grid[r][c]});}
+        else{grid[r][c]&=~WALL_W;grid[r][c-1]&=~WALL_E;steps.push({type:'CARVE',r,c,r2:r,c2:c-1,walls:grid[r][c]});}
+      } else if(canN){grid[r][c]&=~WALL_N;grid[r-1][c]&=~WALL_S;steps.push({type:'CARVE',r,c,r2:r-1,c2:c,walls:grid[r][c]});}
+      else{grid[r][c]&=~WALL_W;grid[r][c-1]&=~WALL_E;steps.push({type:'CARVE',r,c,r2:r,c2:c-1,walls:grid[r][c]});}
+    }
+  steps.push({type:'DONE',r:0,c:0,walls:0});
+  return{grid,steps,rows,cols};
+}
+
+function huntAndKill(rows,cols){
+  const WALL_N=1,WALL_S=2,WALL_W=4,WALL_E=8;
+  const DR=[-1,1,0,0],DC=[0,0,-1,1],WB=[WALL_N,WALL_S,WALL_W,WALL_E],OW=[WALL_S,WALL_N,WALL_E,WALL_W];
+  const grid=Array.from({length:rows},()=>new Uint8Array(cols).fill(0xF));
+  const vis=Array.from({length:rows},()=>new Uint8Array(cols));
+  const steps=[];const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+  let r=0,c=0;vis[r][c]=1;steps.push({type:'VISIT',r,c,walls:grid[r][c]});
+  while(true){
+    const dirs=shuffle([0,1,2,3]);let moved=false;
+    for(const d of dirs){const nr=r+DR[d],nc=c+DC[d];if(nr<0||nr>=rows||nc<0||nc>=cols||vis[nr][nc]) continue;
+      grid[r][c]&=~WB[d];grid[nr][nc]&=~OW[d];steps.push({type:'CARVE',r,c,r2:nr,c2:nc,walls:grid[r][c]});
+      vis[nr][nc]=1;r=nr;c=nc;steps.push({type:'VISIT',r,c,walls:grid[r][c]});moved=true;break;}
+    if(moved) continue;
+    let found=false;
+    outer:for(let hr=0;hr<rows;hr++)for(let hc=0;hc<cols;hc++){
+      if(vis[hr][hc]) continue;
+      for(let d=0;d<4;d++){const nr=hr+DR[d],nc=hc+DC[d];
+        if(nr<0||nr>=rows||nc<0||nc>=cols||!vis[nr][nc]) continue;
+        grid[hr][hc]&=~WB[d];grid[nr][nc]&=~OW[d];steps.push({type:'CARVE',r:hr,c:hc,r2:nr,c2:nc,walls:grid[hr][hc]});
+        vis[hr][hc]=1;r=hr;c=hc;found=true;steps.push({type:'VISIT',r,c,walls:grid[r][c]});break outer;}
+    }
+    if(!found) break;
+  }
+  steps.push({type:'DONE',r:0,c:0,walls:0});
+  return{grid,steps,rows,cols};
+}
+
+function kruskalMaze(rows,cols){
+  const WALL_N=1,WALL_S=2,WALL_W=4,WALL_E=8;
+  const grid=Array.from({length:rows},()=>new Uint8Array(cols).fill(0xF));
+  const steps=[];
+  const par=Array.from({length:rows*cols},(_,i)=>i);
+  const find=x=>par[x]===x?x:par[x]=find(par[x]);
+  const unite=(a,b)=>{a=find(a);b=find(b);if(a===b)return false;par[b]=a;return true;};
+  const edges=[];
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    if(c<cols-1)edges.push([r,c,0,1,WALL_E,WALL_W]);
+    if(r<rows-1)edges.push([r,c,1,0,WALL_S,WALL_N]);
+  }
+  edges.sort(()=>Math.random()-0.5);
+  for(const[r,c,dr,dc,wb,ow]of edges){
+    const nr=r+dr,nc=c+dc;
+    if(unite(r*cols+c,nr*cols+nc)){
+      grid[r][c]&=~wb;grid[nr][nc]&=~ow;
+      steps.push({type:'CARVE',r,c,r2:nr,c2:nc,walls:grid[r][c]});
+    }
+  }
+  steps.push({type:'DONE',r:0,c:0,walls:0});
+  return{grid,steps,rows,cols};
+}
+
+// New path algorithms
+function greedyBFSSearch(grid,sr,sc,er,ec,hType){
+  const rows=grid.length,cols=grid[0].length,steps=[],path=[];
+  const vis=Array.from({length:rows},()=>new Uint8Array(cols));
+  const par=Array.from({length:rows},()=>Array(cols).fill(null));
+  const h=(r,c)=>heuristic(r,c,er,ec,hType);
+  class Heap{constructor(){this.d=[];}push(x){this.d.push(x);this._up(this.d.length-1);}pop(){const t=this.d[0];const l=this.d.pop();if(this.d.length){this.d[0]=l;this._down(0);}return t;}get size(){return this.d.length;}_up(i){while(i>0){const p=(i-1)>>1;if(this.d[p][0]>this.d[i][0]){[this.d[p],this.d[i]]=[this.d[i],this.d[p]];i=p;}else break;}}_down(i){const n=this.d.length;while(true){let s=i,l=2*i+1,r=2*i+2;if(l<n&&this.d[l][0]<this.d[s][0])s=l;if(r<n&&this.d[r][0]<this.d[s][0])s=r;if(s===i)break;[this.d[s],this.d[i]]=[this.d[i],this.d[s]];i=s;}}}
+  const pq=new Heap();pq.push([h(sr,sc),sr,sc]);
+  const DR=[-1,1,0,0],DC=[0,0,-1,1];
+  while(pq.size){
+    const[hv,r,c]=pq.pop();if(vis[r][c])continue;vis[r][c]=1;
+    steps.push({type:'VISIT',r,c,h:hv});
+    if(r===er&&c===ec){let cur=[r,c];while(cur){path.unshift({r:cur[0],c:cur[1]});cur=par[cur[0]][cur[1]];}return{found:true,cost:path.length-1,path,steps};}
+    for(let d=0;d<4;d++){const nr=r+DR[d],nc=c+DC[d];if(nr<0||nr>=rows||nc<0||nc>=cols||grid[nr][nc]===1||vis[nr][nc])continue;par[nr][nc]=[r,c];pq.push([h(nr,nc),nr,nc]);}
+  }
+  return{found:false,path:[],steps};
+}
+
+function thetaStarSearch(grid,sr,sc,er,ec){
+  const rows=grid.length,cols=grid[0].length,steps=[];
+  const g=Array.from({length:rows},()=>new Float64Array(cols).fill(Infinity));
+  const par=Array.from({length:rows},()=>Array(cols).fill(null));
+  const closed=Array.from({length:rows},()=>new Uint8Array(cols));
+  const DR=[-1,-1,-1,0,0,1,1,1],DC=[-1,0,1,-1,1,-1,0,1];
+  const los=(r1,c1,r2,c2)=>{
+    let dr=Math.abs(r2-r1),dc=Math.abs(c2-c1),sr2=r1<r2?1:-1,sc2=c1<c2?1:-1,err=dr-dc,r=r1,c=c1;
+    while(true){if(grid[r][c]===1)return false;if(r===r2&&c===c2)return true;const e2=2*err;if(e2>-dc){err-=dc;r+=sr2;}if(e2<dr){err+=dr;c+=sc2;}}
+  };
+  const h=(r,c)=>heuristic(r,c,er,ec,'EUCLIDEAN');
+  class Heap{constructor(){this.d=[];}push(x){this.d.push(x);this._up(this.d.length-1);}pop(){const t=this.d[0];const l=this.d.pop();if(this.d.length){this.d[0]=l;this._down(0);}return t;}get size(){return this.d.length;}_up(i){while(i>0){const p=(i-1)>>1;if(this.d[p][0]>this.d[i][0]){[this.d[p],this.d[i]]=[this.d[i],this.d[p]];i=p;}else break;}}_down(i){const n=this.d.length;while(true){let s=i,l=2*i+1,r2=2*i+2;if(l<n&&this.d[l][0]<this.d[s][0])s=l;if(r2<n&&this.d[r2][0]<this.d[s][0])s=r2;if(s===i)break;[this.d[s],this.d[i]]=[this.d[i],this.d[s]];i=s;}}}
+  const pq=new Heap();
+  g[sr][sc]=0;par[sr][sc]=[sr,sc];pq.push([h(sr,sc),sr,sc]);
+  while(pq.size){
+    const[fv,r,c]=pq.pop();if(closed[r][c])continue;closed[r][c]=1;
+    steps.push({type:'VISIT',r,c,g:g[r][c]});
+    if(r===er&&c===ec){
+      const path=[];let cur=[r,c];
+      while(cur&&!(cur[0]===sr&&cur[1]===sc)){path.unshift({r:cur[0],c:cur[1]});const p=par[cur[0]][cur[1]];if(!p||p===cur)break;cur=p;}
+      path.unshift({r:sr,c:sc});
+      return{found:true,cost:g[er][ec],path,steps};
+    }
+    const[pr,pc]=par[r][c]||[r,c];
+    for(let d=0;d<8;d++){
+      const nr=r+DR[d],nc=c+DC[d];
+      if(nr<0||nr>=rows||nc<0||nc>=cols||grid[nr][nc]===1||closed[nr][nc])continue;
+      let ng,np;
+      if(pr>=0&&los(pr,pc,nr,nc)){const dx=nr-pr,dy=nc-pc;ng=g[pr][pc]+Math.sqrt(dx*dx+dy*dy);np=[pr,pc];}
+      else{const dx=nr-r,dy=nc-c;ng=g[r][c]+Math.sqrt(dx*dx+dy*dy);np=[r,c];}
+      if(ng<g[nr][nc]){g[nr][nc]=ng;par[nr][nc]=np;pq.push([ng+h(nr,nc),nr,nc]);}
+    }
+  }
+  return{found:false,path:[],steps};
+}
+
+function beamSearchPath(grid,sr,sc,er,ec,hType,beamWidth=5){
+  const rows=grid.length,cols=grid[0].length,steps=[];
+  const vis=Array.from({length:rows},()=>new Uint8Array(cols));
+  const par=Array.from({length:rows},()=>Array(cols).fill(null));
+  const h=(r,c)=>heuristic(r,c,er,ec,hType);
+  const DR=[-1,1,0,0],DC=[0,0,-1,1];
+  let beam=[[h(sr,sc),sr,sc]];vis[sr][sc]=1;
+  while(beam.length){
+    const next=[];
+    for(const[hv,r,c]of beam){
+      steps.push({type:'VISIT',r,c,h:hv});
+      if(r===er&&c===ec){const path=[];let cur=[r,c];while(cur){path.unshift({r:cur[0],c:cur[1]});cur=par[cur[0]][cur[1]];}return{found:true,cost:path.length-1,path,steps};}
+      for(let d=0;d<4;d++){const nr=r+DR[d],nc=c+DC[d];if(nr<0||nr>=rows||nc<0||nc>=cols||grid[nr][nc]===1||vis[nr][nc])continue;vis[nr][nc]=1;par[nr][nc]=[r,c];next.push([h(nr,nc),nr,nc]);}
+    }
+    next.sort((a,b)=>a[0]-b[0]);
+    beam=next.slice(0,beamWidth);
+  }
+  return{found:false,path:[],steps};
+}
+
+function iddfsSearch(grid,sr,sc,er,ec){
+  const rows=grid.length,cols=grid[0].length;
+  const DR=[-1,1,0,0],DC=[0,0,-1,1];
+  for(let maxD=0;maxD<rows*cols;maxD++){
+    const steps=[],depth=Array.from({length:rows},()=>new Int32Array(cols).fill(Infinity));
+    const par=Array.from({length:rows},()=>Array(cols).fill(null));
+    let found=false;
+    const dls=(r,c,d)=>{
+      steps.push({type:'VISIT',r,c});
+      if(r===er&&c===ec){found=true;return true;}
+      if(d===0)return false;
+      for(let i=0;i<4;i++){const nr=r+DR[i],nc=c+DC[i];if(nr<0||nr>=rows||nc<0||nc>=cols||grid[nr][nc]===1)continue;if(depth[nr][nc]<=d)continue;depth[nr][nc]=d;par[nr][nc]=[r,c];if(dls(nr,nc,d-1))return true;}
+      return false;
+    };
+    depth[sr][sc]=maxD;
+    if(dls(sr,sc,maxD)){
+      const path=[];let cur=[er,ec];while(cur){path.unshift({r:cur[0],c:cur[1]});cur=par[cur[0]][cur[1]];}
+      path.unshift({r:sr,c:sc});
+      return{found:true,path,steps};
+    }
+  }
+  return{found:false,path:[],steps};
+}
+
+// New sort algorithms
+function cocktailSort(arr){
+  const a=[...arr],steps=[];let comparisons=0,swaps=0;
+  const rec=(t,i,j)=>steps.push({type:t,i,j,arr:[...a],comparisons,swaps});
+  let lo=0,hi=a.length-1,swapped=true;
+  while(swapped){
+    swapped=false;
+    for(let i=lo;i<hi;i++){comparisons++;rec('COMPARE',i,i+1);if(a[i]>a[i+1]){[a[i],a[i+1]]=[a[i+1],a[i]];swaps++;rec('SWAP',i,i+1);swapped=true;}}
+    if(!swapped)break;hi--;swapped=false;
+    for(let i=hi-1;i>=lo;i--){comparisons++;rec('COMPARE',i,i+1);if(a[i]>a[i+1]){[a[i],a[i+1]]=[a[i+1],a[i]];swaps++;rec('SWAP',i,i+1);swapped=true;}}
+    lo++;
+  }
+  rec('DONE',-1,-1);return{steps,comparisons,swaps,sorted:a};
+}
+
+function gnomeSort(arr){
+  const a=[...arr],steps=[];let comparisons=0,swaps=0,i=0;
+  const rec=(t,i,j)=>steps.push({type:t,i,j,arr:[...a],comparisons,swaps});
+  while(i<a.length){
+    if(i===0){i++;continue;}
+    comparisons++;rec('COMPARE',i-1,i);
+    if(a[i-1]<=a[i])i++;
+    else{[a[i-1],a[i]]=[a[i],a[i-1]];swaps++;rec('SWAP',i-1,i);i--;}
+  }
+  rec('DONE',-1,-1);return{steps,comparisons,swaps,sorted:a};
+}
+
+function combSort(arr){
+  const a=[...arr],steps=[];let comparisons=0,swaps=0;
+  const rec=(t,i,j)=>steps.push({type:t,i,j,arr:[...a],comparisons,swaps});
+  let gap=a.length,swapped=true;
+  while(gap>1||swapped){
+    gap=Math.max(1,Math.floor(gap/1.3));swapped=false;
+    for(let i=0;i+gap<a.length;i++){comparisons++;rec('COMPARE',i,i+gap);if(a[i]>a[i+gap]){[a[i],a[i+gap]]=[a[i+gap],a[i]];swaps++;rec('SWAP',i,i+gap);swapped=true;}}
+  }
+  rec('DONE',-1,-1);return{steps,comparisons,swaps,sorted:a};
+}
+
+function cycleSort(arr){
+  const a=[...arr],steps=[];let comparisons=0,swaps=0;
+  const rec=(t,i,j)=>steps.push({type:t,i,j,arr:[...a],comparisons,swaps});
+  for(let cs=0;cs<a.length-1;cs++){
+    let item=a[cs],pos=cs;
+    for(let i=cs+1;i<a.length;i++){comparisons++;if(a[i]<item)pos++;}
+    if(pos===cs)continue;
+    while(a[pos]===item)pos++;[a[pos],item]=[item,a[pos]];swaps++;rec('SWAP',cs,pos);
+    while(pos!==cs){pos=cs;for(let i=cs+1;i<a.length;i++){comparisons++;if(a[i]<item)pos++;}while(a[pos]===item)pos++;[a[pos],item]=[item,a[pos]];swaps++;rec('SWAP',cs,pos);}
+  }
+  rec('DONE',-1,-1);return{steps,comparisons,swaps,sorted:a};
+}
+
+function pancakeSort(arr){
+  const a=[...arr],steps=[];let comparisons=0,swaps=0;
+  const rec=(t,i,j)=>steps.push({type:t,i,j,arr:[...a],comparisons,swaps});
+  const flip=(k)=>{let lo=0,hi=k;while(lo<hi){[a[lo],a[hi]]=[a[hi],a[lo]];swaps++;lo++;hi--;}rec('SWAP',0,k);};
+  for(let size=a.length;size>1;size--){
+    let mi=0;for(let i=1;i<size;i++){comparisons++;rec('COMPARE',i,mi);if(a[i]>a[mi])mi=i;}
+    if(mi!==size-1){if(mi!==0)flip(mi);flip(size-1);}
+  }
+  rec('DONE',-1,-1);return{steps,comparisons,swaps,sorted:a};
+}
+
+function bitonicSortJS(arr){
+  const a=[...arr],steps=[];let comparisons=0,swaps=0;
+  const rec=(t,i,j)=>steps.push({type:t,i,j,arr:[...a],comparisons,swaps});
+  let p=1;while(p<a.length)p<<=1;
+  while(a.length<p)a.push(Infinity);
+  const merge=(lo,cnt,asc)=>{if(cnt<=1)return;const k=cnt>>1;for(let i=lo;i<lo+k;i++){comparisons++;rec('COMPARE',i,i+k);if((asc&&a[i]>a[i+k])||(!asc&&a[i]<a[i+k])){[a[i],a[i+k]]=[a[i+k],a[i]];swaps++;rec('SWAP',i,i+k);}}merge(lo,k,asc);merge(lo+k,k,asc);};
+  const sort=(lo,cnt,asc)=>{if(cnt<=1)return;const k=cnt>>1;sort(lo,k,true);sort(lo+k,k,false);merge(lo,cnt,asc);};
+  sort(0,p,true);a.length=arr.length;
+  rec('DONE',-1,-1);return{steps,comparisons,swaps,sorted:a};
+}
+
+function oddEvenSort(arr){
+  const a=[...arr],steps=[];let comparisons=0,swaps=0,sorted=false;
+  const rec=(t,i,j)=>steps.push({type:t,i,j,arr:[...a],comparisons,swaps});
+  while(!sorted){sorted=true;for(let ph=0;ph<2;ph++)for(let i=ph;i<a.length-1;i+=2){comparisons++;rec('COMPARE',i,i+1);if(a[i]>a[i+1]){[a[i],a[i+1]]=[a[i+1],a[i]];swaps++;rec('SWAP',i,i+1);sorted=false;}}}
+  rec('DONE',-1,-1);return{steps,comparisons,swaps,sorted:a};
+}
+
+function stoogeSortJS(arr){
+  const a=[...arr],steps=[];let comparisons=0,swaps=0;
+  const rec=(t,i,j)=>steps.push({type:t,i,j,arr:[...a],comparisons,swaps});
+  const stooge=(lo,hi)=>{comparisons++;rec('COMPARE',lo,hi);if(a[lo]>a[hi]){[a[lo],a[hi]]=[a[hi],a[lo]];swaps++;rec('SWAP',lo,hi);}if(hi-lo+1>2){const t2=Math.floor((hi-lo+1)/3);stooge(lo,hi-t2);stooge(lo+t2,hi);stooge(lo,hi-t2);}};
+  stooge(0,a.length-1);rec('DONE',-1,-1);return{steps,comparisons,swaps,sorted:a};
+}
+
+function introSortJS(arr){
+  const a=[...arr],steps=[];let comparisons=0,swaps=0;
+  const rec=(t,i,j)=>steps.push({type:t,i,j,arr:[...a],comparisons,swaps});
+  const heapify=(n,i,base)=>{let lg=i,l=2*i+1,r=2*i+2;comparisons++;if(l<n&&a[base+l]>a[base+lg])lg=l;comparisons++;if(r<n&&a[base+r]>a[base+lg])lg=r;if(lg!==i){[a[base+i],a[base+lg]]=[a[base+lg],a[base+i]];swaps++;rec('SWAP',base+i,base+lg);heapify(n,lg,base);}};
+  const depth=2*Math.floor(Math.log2(a.length));
+  const sort=(lo,hi,d)=>{
+    if(hi-lo<16){for(let i=lo+1;i<=hi;i++){const k=a[i];let j=i-1;while(j>=lo&&(comparisons++,a[j]>k)){a[j+1]=a[j];swaps++;rec('SHIFT',j,j+1);j--;}a[j+1]=k;}return;}
+    if(d===0){const n=hi-lo+1;for(let i=Math.floor(n/2)-1;i>=0;i--)heapify(n,i,lo);for(let i=hi;i>lo;i--){[a[lo],a[i]]=[a[i],a[lo]];swaps++;rec('SWAP',lo,i);heapify(i-lo,0,lo);}return;}
+    let pivot=a[hi],i=lo-1;rec('PIVOT',lo,hi);
+    for(let j=lo;j<hi;j++){comparisons++;rec('COMPARE',j,hi);if(a[j]<=pivot){i++;[a[i],a[j]]=[a[j],a[i]];swaps++;rec('SWAP',i,j);}}
+    [a[i+1],a[hi]]=[a[hi],a[i+1]];swaps++;rec('SWAP',i+1,hi);
+    sort(lo,i,d-1);sort(i+2,hi,d-1);
+  };
+  sort(0,a.length-1,depth);rec('DONE',-1,-1);return{steps,comparisons,swaps,sorted:a};
+}
+
+function runSort(algorithm, arr) {
+  const a=[...arr], steps=[];
+  let comparisons=0,swaps=0;
+
+  const rec=(t,i,j)=>steps.push({type:t,i,j,arr:[...a],comparisons,swaps});
+
+  if(algorithm==='bubble'){
+    for(let i=0;i<a.length-1;i++)
+      for(let j=0;j<a.length-1-i;j++){
+        comparisons++;rec('COMPARE',j,j+1);
+        if(a[j]>a[j+1]){[a[j],a[j+1]]=[a[j+1],a[j]];swaps++;rec('SWAP',j,j+1);}
+      }
+  } else if(algorithm==='quick'){
+    const qs=(lo,hi)=>{
+      if(lo>=hi)return;
+      let pivot=a[hi],i=lo-1;
+      rec('PIVOT',lo,hi);
+      for(let j=lo;j<hi;j++){comparisons++;rec('COMPARE',j,hi);if(a[j]<=pivot){i++;[a[i],a[j]]=[a[j],a[i]];swaps++;rec('SWAP',i,j);}}
+      [a[i+1],a[hi]]=[a[hi],a[i+1]];swaps++;rec('SWAP',i+1,hi);
+      qs(lo,i);qs(i+2,hi);
+    };
+    qs(0,a.length-1);
+  } else if(algorithm==='merge'){
+    const ms=(lo,hi)=>{
+      if(hi-lo<=1)return;
+      const mid=(lo+hi)>>1;
+      ms(lo,mid);ms(mid,hi);
+      const tmp=[];let l=lo,r=mid;
+      while(l<mid&&r<hi){comparisons++;if(a[l]<=a[r])tmp.push(a[l++]);else tmp.push(a[r++]);}
+      while(l<mid)tmp.push(a[l++]);while(r<hi)tmp.push(a[r++]);
+      for(let i=lo;i<hi;i++){a[i]=tmp[i-lo];swaps++;rec('MERGE',lo,hi);}
+    };
+    ms(0,a.length);
+  } else if(algorithm==='heap'){
+    const heapify=(n,i)=>{
+      let lg=i,l=2*i+1,r=2*i+2;
+      comparisons++;if(l<n&&a[l]>a[lg])lg=l;
+      comparisons++;if(r<n&&a[r]>a[lg])lg=r;
+      if(lg!==i){[a[i],a[lg]]=[a[lg],a[i]];swaps++;rec('SWAP',i,lg);heapify(n,lg);}
+    };
+    for(let i=Math.floor(a.length/2)-1;i>=0;i--)heapify(a.length,i);
+    for(let i=a.length-1;i>0;i--){[a[0],a[i]]=[a[i],a[0]];swaps++;rec('SWAP',0,i);heapify(i,0);}
+  } else if(algorithm==='insertion'){
+    for(let i=1;i<a.length;i++){
+      const key=a[i];let j=i-1;rec('SELECT',i,i);
+      while(j>=0&&(comparisons++,a[j]>key)){a[j+1]=a[j];swaps++;rec('SHIFT',j,j+1);j--;}
+      a[j+1]=key;rec('INSERT',j+1,i);
+    }
+  } else if(algorithm==='selection'){
+    for(let i=0;i<a.length-1;i++){
+      let mi=i;
+      for(let j=i+1;j<a.length;j++){comparisons++;rec('COMPARE',i,j);if(a[j]<a[mi])mi=j;}
+      if(mi!==i){[a[i],a[mi]]=[a[mi],a[i]];swaps++;rec('SWAP',i,mi);}
+    }
+  } else if(algorithm==='shell'){
+    for(let g=Math.floor(a.length/2);g>0;g=Math.floor(g/2))
+      for(let i=g;i<a.length;i++){const k=a[i];let j=i;rec('SELECT',i,i);while(j>=g&&(comparisons++,a[j-g]>k)){a[j]=a[j-g];swaps++;rec('SHIFT',j-g,j);j-=g;}a[j]=k;rec('INSERT',j,i);}
+  } else if(algorithm==='radix'){
+    const max=Math.max(...a);
+    for(let exp=1;Math.floor(max/exp)>0;exp*=10){
+      const out=new Array(a.length),cnt=new Array(10).fill(0);
+      for(let i=0;i<a.length;i++)cnt[Math.floor(a[i]/exp)%10]++;
+      for(let i=1;i<10;i++)cnt[i]+=cnt[i-1];
+      for(let i=a.length-1;i>=0;i--){out[--cnt[Math.floor(a[i]/exp)%10]]=a[i];swaps++;}
+      for(let i=0;i<a.length;i++)a[i]=out[i];
+      rec('MERGE',0,a.length-1);
+    }
+  } else if(algorithm==='counting'){
+    const max=Math.max(...a),min=Math.min(...a);
+    const cnt=new Array(max-min+1).fill(0);
+    for(const x of a){cnt[x-min]++;rec('SELECT',x-min,x);}
+    let idx=0;
+    for(let i=0;i<cnt.length;i++)while(cnt[i]--){a[idx++]=i+min;swaps++;rec('INSERT',idx-1,i);}
+  } else if(algorithm==='cocktail')  { return cocktailSort(arr);
+  } else if(algorithm==='gnome')     { return gnomeSort(arr);
+  } else if(algorithm==='comb')      { return combSort(arr);
+  } else if(algorithm==='cycle')     { return cycleSort(arr);
+  } else if(algorithm==='pancake')   { return pancakeSort(arr);
+  } else if(algorithm==='bitonic')   { return bitonicSortJS(arr);
+  } else if(algorithm==='oddeven')   { return oddEvenSort(arr);
+  } else if(algorithm==='stooge')    { return stoogeSortJS(arr);
+  } else if(algorithm==='intro')     { return introSortJS(arr);
+  } else if(algorithm==='timsort'){
+    const RUN=32;
+    for(let i=0;i<a.length;i+=RUN){
+      const lo=i,hi=Math.min(i+RUN-1,a.length-1);
+      for(let j=lo+1;j<=hi;j++){const key=a[j];let k=j-1;while(k>=lo&&(comparisons++,a[k]>key)){a[k+1]=a[k];swaps++;rec('SHIFT',k,k+1);k--;}a[k+1]=key;}
+    }
+    for(let size=RUN;size<a.length;size*=2)
+      for(let lo2=0;lo2<a.length;lo2+=2*size){
+        const mid=Math.min(lo2+size-1,a.length-1),hi2=Math.min(lo2+2*size-1,a.length-1);
+        if(mid<hi2){const tmp=[];let l=lo2,r=mid+1;while(l<=mid&&r<=hi2){comparisons++;if(a[l]<=a[r])tmp.push(a[l++]);else tmp.push(a[r++]);}while(l<=mid)tmp.push(a[l++]);while(r<=hi2)tmp.push(a[r++]);for(let i=lo2;i<=hi2;i++){a[i]=tmp[i-lo2];swaps++;rec('MERGE',lo2,hi2);}}
+      }
+  }
+
+  rec('DONE',-1,-1);
+  return {steps, comparisons, swaps, sorted: a};
+}
+
+// ─── Graph Algorithms ─────────────────────────────────────────────────────
+
+class UnionFind {
+  constructor(n){this.p=Array.from({length:n},(_,i)=>i);this.r=new Array(n).fill(0);}
+  find(x){return this.p[x]===x?x:this.p[x]=this.find(this.p[x]);}
+  union(a,b){a=this.find(a);b=this.find(b);if(a===b)return false;if(this.r[a]<this.r[b])[a,b]=[b,a];this.p[b]=a;if(this.r[a]===this.r[b])this.r[a]++;return true;}
+}
+
+function kruskal(nodes,edges){
+  const uf=new UnionFind(nodes);
+  const sorted=[...edges].sort((a,b)=>a.w-b.w);
+  const steps=[],mst=[];let totalW=0;
+  for(const e of sorted){
+    steps.push({type:'COMPARE',u:e.u,v:e.v,w:e.w});
+    if(uf.union(e.u,e.v)){mst.push(e);totalW+=e.w;steps.push({type:'VISIT',u:e.u,v:e.v,w:e.w});}
+  }
+  steps.push({type:'DONE',u:0,v:0});
+  return{steps,mst,totalWeight:totalW};
+}
+
+function primMST(nodes,edges,start=0){
+  const adj=Array.from({length:nodes},()=>[]);
+  for(const e of edges){adj[e.u].push({v:e.v,w:e.w});if(!e.directed)adj[e.v].push({v:e.u,w:e.w});}
+  const inMST=new Uint8Array(nodes),key=new Float64Array(nodes).fill(Infinity);
+  const par=new Int32Array(nodes).fill(-1);
+  const steps=[],mst=[];let totalW=0;
+  key[start]=0;
+  class Heap{constructor(){this.d=[];}push(x){this.d.push(x);this._up(this.d.length-1);}pop(){const t=this.d[0];const l=this.d.pop();if(this.d.length){this.d[0]=l;this._down(0);}return t;}get size(){return this.d.length;}_up(i){while(i>0){const p=(i-1)>>1;if(this.d[p][0]>this.d[i][0]){[this.d[p],this.d[i]]=[this.d[i],this.d[p]];i=p;}else break;}}_down(i){const n=this.d.length;while(true){let s=i,l=2*i+1,r=2*i+2;if(l<n&&this.d[l][0]<this.d[s][0])s=l;if(r<n&&this.d[r][0]<this.d[s][0])s=r;if(s===i)break;[this.d[s],this.d[i]]=[this.d[i],this.d[s]];i=s;}}}
+  const pq=new Heap();pq.push([0,start]);
+  while(pq.size){
+    const[d,u]=pq.pop();
+    if(inMST[u]) continue;
+    inMST[u]=1;
+    steps.push({type:'VISIT',u,v:par[u]??-1,w:d});
+    if(par[u]>=0){mst.push({u:par[u],v:u,w:d});totalW+=d;}
+    for(const{v,w}of adj[u])if(!inMST[v]&&w<key[v]){key[v]=w;par[v]=u;pq.push([w,v]);}
+  }
+  steps.push({type:'DONE',u:0,v:0});
+  return{steps,mst,totalWeight:totalW};
+}
+
+function bellmanFord(nodes,edges,src){
+  const dist=new Float64Array(nodes).fill(Infinity);dist[src]=0;
+  const steps=[]; let hasCycle=false;
+  for(let i=0;i<nodes-1;i++)
+    for(const e of edges)
+      if(dist[e.u]+e.w<dist[e.v]){dist[e.v]=dist[e.u]+e.w;steps.push({type:'VISIT',u:e.u,v:e.v,w:dist[e.v]});}
+  for(const e of edges)if(dist[e.u]+e.w<dist[e.v]){hasCycle=true;break;}
+  steps.push({type:'DONE',u:0,v:0});
+  return{steps,dist:Array.from(dist),hasNegCycle:hasCycle};
+}
+
+function tarjanSCC(nodes,adjList){
+  const disc=new Int32Array(nodes).fill(-1),low=new Int32Array(nodes);
+  const onStk=new Uint8Array(nodes),comp=new Int32Array(nodes).fill(-1);
+  let timer=0,sccCount=0;
+  const stk=[],steps=[];
+  function dfs(u){
+    disc[u]=low[u]=timer++;stk.push(u);onStk[u]=1;
+    steps.push({type:'VISIT',u,v:-1});
+    for(const v of adjList[u]){
+      if(disc[v]<0){dfs(v);low[u]=Math.min(low[u],low[v]);}
+      else if(onStk[v])low[u]=Math.min(low[u],disc[v]);
+    }
+    if(low[u]===disc[u]){
+      while(true){const v=stk.pop();onStk[v]=0;comp[v]=sccCount;steps.push({type:'DONE',u:v,v:sccCount});if(v===u)break;}
+      sccCount++;
+    }
+  }
+  for(let i=0;i<nodes;i++)if(disc[i]<0)dfs(i);
+  return{steps,components:Array.from(comp),sccCount};
+}
+
+function topoSort(nodes,adjList){
+  const indeg=new Int32Array(nodes),steps=[],order=[];
+  for(let u=0;u<nodes;u++)for(const v of adjList[u])indeg[v]++;
+  const q=[]; for(let i=0;i<nodes;i++)if(!indeg[i])q.push(i);
+  let h=0;
+  while(h<q.length){
+    const u=q[h++];order.push(u);steps.push({type:'VISIT',u,v:-1});
+    for(const v of adjList[u])if(!--indeg[v])q.push(v);
+  }
+  steps.push({type:'DONE',u:0,v:0});
+  return{steps,topoOrder:order};
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  RENDERING ENGINE
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Maze Renderer ────────────────────────────────────────────────────────
+let cellSize = 22;
+let cellStates = null; // 2d array of color state
+
+function computeCellSize(rows, cols) {
+  const wrap = document.getElementById('grid-wrap');
+  const w = wrap.clientWidth - 40;
+  const h = wrap.clientHeight - 40;
+  return Math.max(4, Math.min(Math.floor(w / cols), Math.floor(h / rows)));
+}
+
+function resizeMazeCanvas(rows, cols) {
+  cellSize = computeCellSize(rows, cols);
+  const W = cols * cellSize, H = rows * cellSize;
+  [mazeCanvas, pathCanvas, overlayCanvas].forEach(c => {
+    c.width = W; c.height = H;
+    c.style.width  = W + 'px';
+    c.style.height = H + 'px';
+  });
+  cellStates = Array.from({length: rows}, () => new Array(cols).fill('empty'));
+}
+
+function clearMazeCanvas() {
+  mctx.fillStyle = C.bg0;
+  mctx.fillRect(0, 0, mazeCanvas.width, mazeCanvas.height);
+}
+
+function drawMazeCell(r, c, grid, rows, cols) {
+  const x = c * cellSize, y = r * cellSize;
+  const state = cellStates?.[r]?.[c] ?? 'empty';
+
+  const colors = {
+    empty:     C.carve,
+    visited:   C.visited,
+    open:      C.open,
+    path:      C.path,
+    wall:      C.bg0,
+    backtrack: '#2a1a2a',
+    done:      C.carve,
+  };
+
+  mctx.fillStyle = colors[state] || C.carve;
+  mctx.fillRect(x, y, cellSize, cellSize);
+
+  // Draw walls
+  if (!grid) return;
+  const walls = grid[r][c];
+  mctx.strokeStyle = C.border2;
+  mctx.lineWidth = 1.5;
+  mctx.beginPath();
+  if (walls & 1) { mctx.moveTo(x, y); mctx.lineTo(x+cellSize, y); }         // N
+  if (walls & 2) { mctx.moveTo(x, y+cellSize); mctx.lineTo(x+cellSize, y+cellSize); } // S
+  if (walls & 4) { mctx.moveTo(x, y); mctx.lineTo(x, y+cellSize); }         // W
+  if (walls & 8) { mctx.moveTo(x+cellSize, y); mctx.lineTo(x+cellSize, y+cellSize); } // E
+  mctx.stroke();
+}
+
+function drawMazeFull(grid, rows, cols) {
+  clearMazeCanvas();
+  for(let r=0;r<rows;r++)
+    for(let c=0;c<cols;c++)
+      drawMazeCell(r, c, grid, rows, cols);
+
+  // Draw start/end
+  drawSpecialCell(0, 0, C.start);
+  drawSpecialCell(rows-1, cols-1, C.end);
+}
+
+function drawSpecialCell(r, c, color) {
+  const x = c * cellSize + cellSize*0.15;
+  const y = r * cellSize + cellSize*0.15;
+  const s = cellSize * 0.7;
+  mctx.fillStyle = color;
+  mctx.beginPath();
+  mctx.roundRect?.(x, y, s, s, 2) || mctx.rect(x,y,s,s);
+  mctx.fill();
+}
+
+// ─── Path Grid Renderer ───────────────────────────────────────────────────
+const PATH_CELL = { 0: C.bg3, 1: C.wall, 2: C.weight };
+
+function drawPathGrid(grid, rows, cols, startR, startC, endR, endC) {
+  const W = cols * cellSize, H = rows * cellSize;
+  pctx.clearRect(0, 0, W, H);
+  for(let r=0;r<rows;r++)
+    for(let c=0;c<cols;c++){
+      pctx.fillStyle = PATH_CELL[grid[r][c]] || C.bg3;
+      pctx.fillRect(c*cellSize, r*cellSize, cellSize-1, cellSize-1);
+    }
+  drawPathSpecial(startR, startC, C.start, pctx);
+  drawPathSpecial(endR,   endC,   C.end,   pctx);
+}
+
+function drawPathSpecial(r, c, color, ctx) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(c*cellSize+cellSize/2, r*cellSize+cellSize/2, cellSize*0.35, 0, Math.PI*2);
+  ctx.fill();
+}
+
+function drawPathOverlay(steps, path, curIdx, grid, rows, cols) {
+  const W = cols*cellSize, H = rows*cellSize;
+  octx.clearRect(0,0,W,H);
+
+  const visited_cells = new Map();
+  const open_cells    = new Map();
+
+  for(let i=0;i<=curIdx&&i<steps.length;i++){
+    const s=steps[i];
+    const key=`${s.r},${s.c}`;
+    if(s.type==='VISIT')   { visited_cells.set(key,[s.r,s.c]); open_cells.delete(key); }
+    else if(s.type==='OPEN'){ open_cells.set(key,[s.r,s.c]); }
+  }
+
+  for(const[r,c] of visited_cells.values()){
+    octx.fillStyle = C.visited;
+    octx.fillRect(c*cellSize,r*cellSize,cellSize-1,cellSize-1);
+  }
+  for(const[r,c] of open_cells.values()){
+    octx.fillStyle = C.open;
+    octx.fillRect(c*cellSize,r*cellSize,cellSize-1,cellSize-1);
+  }
+
+  // Draw path
+  if(path.length>0 && curIdx>=steps.length-1){
+    for(const{r,c} of path){
+      octx.fillStyle = C.neonY+'aa';
+      octx.fillRect(c*cellSize+2,r*cellSize+2,cellSize-4,cellSize-4);
+    }
+    // Draw path line
+    octx.strokeStyle = C.neonY;
+    octx.lineWidth = 2;
+    octx.lineJoin = 'round';
+    octx.beginPath();
+    path.forEach(({r,c},i) => {
+      const px=c*cellSize+cellSize/2, py=r*cellSize+cellSize/2;
+      i===0 ? octx.moveTo(px,py) : octx.lineTo(px,py);
+    });
+    octx.stroke();
+  }
+
+  // Redraw start/end on overlay
+  drawPathSpecial(State.path.startR, State.path.startC, C.start, octx);
+  drawPathSpecial(State.path.endR,   State.path.endC,   C.end,   octx);
+}
+
+// ─── Sort Renderer ────────────────────────────────────────────────────────
+function resizeSortCanvas() {
+  const wrap = document.getElementById('grid-wrap');
+  sortCanvas.width  = wrap.clientWidth;
+  sortCanvas.height = wrap.clientHeight;
+}
+
+function drawSortStep(step, maxVal) {
+  const W = sortCanvas.width, H = sortCanvas.height;
+  const n = step.arr.length;
+  const barW = W / n;
+  sctx.fillStyle = C.bg0;
+  sctx.fillRect(0, 0, W, H);
+
+  const COLORS = {
+    COMPARE: C.neonY, SWAP: C.neonR, SELECT: C.neonP, INSERT: C.neonG,
+    SHIFT: C.neonB, MERGE: C.neonB, PIVOT: C.neonP, DONE: C.neonG, normal: C.accent
+  };
+
+  step.arr.forEach((val, idx) => {
+    const h = (val / maxVal) * (H * 0.9);
+    const x = idx * barW;
+    const y = H - h;
+
+    let color = COLORS.normal;
+    if (idx === step.i) color = COLORS[step.type] || C.neonY;
+    else if (idx === step.j) color = step.type==='SWAP' ? C.neonR : C.neonB;
+    else if (step.type === 'DONE') color = C.neonG;
+
+    sctx.fillStyle = color;
+    sctx.fillRect(x+1, y, Math.max(barW-2, 1), h);
+
+    // Value labels for small arrays
+    if(barW > 16){
+      sctx.fillStyle = C.text2;
+      sctx.font = `${Math.min(10,barW-4)}px ${C.font_mono||'monospace'}`;
+      sctx.textAlign = 'center';
+      sctx.fillText(val, x+barW/2, H-2);
+    }
+  });
+
+  // Stats overlay
+  sctx.fillStyle = C.text0;
+  sctx.font = '12px JetBrains Mono, monospace';
+  sctx.textAlign = 'left';
+  sctx.fillText(`Comparisons: ${step.comparisons}  Swaps: ${step.swaps}  Step: ${step.type}`, 12, 20);
+}
+
+// ─── Graph Renderer ───────────────────────────────────────────────────────
+let graphData = { nodes: [], edges: [] };
+
+function generateRandomGraph(n, density=2, directed=false) {
+  const wrap = document.getElementById('grid-wrap');
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+  const margin = 60;
+
+  const nodes = Array.from({length: n}, (_, i) => ({
+    id: i,
+    x: margin + Math.random() * (W - 2*margin),
+    y: margin + Math.random() * (H - 2*margin),
+    label: String.fromCharCode(65+i),
+    state: 'default'
+  }));
+
+  // Place in circular layout for small graphs
+  if(n <= 12){
+    const cx=W/2, cy=H/2, r=Math.min(W,H)*0.35;
+    nodes.forEach((nd,i) => {
+      nd.x = cx + r*Math.cos(2*Math.PI*i/n - Math.PI/2);
+      nd.y = cy + r*Math.sin(2*Math.PI*i/n - Math.PI/2);
+    });
+  }
+
+  const edges = [];
+  const edgeSet = new Set();
+  const maxEdges = density === 1 ? n-1 : density === 2 ? n*1.5 : n*2;
+
+  // Ensure connectivity: spanning tree first
+  const perm = Array.from({length:n},(_,i)=>i).sort(()=>Math.random()-0.5);
+  for(let i=1;i<n;i++){
+    const u=perm[i-1],v=perm[i];
+    const w=Math.round(Math.random()*9+1);
+    edges.push({u,v,w,directed,state:'default'});
+    edgeSet.add(`${Math.min(u,v)}-${Math.max(u,v)}`);
+  }
+
+  // Extra edges
+  let extra = Math.floor(maxEdges - (n-1));
+  let tries = 0;
+  while(extra>0 && tries<100){
+    const u=Math.floor(Math.random()*n),v=Math.floor(Math.random()*n);
+    if(u===v){tries++;continue;}
+    const key=`${Math.min(u,v)}-${Math.max(u,v)}`;
+    if(edgeSet.has(key)){tries++;continue;}
+    edgeSet.add(key);
+    const w=Math.round(Math.random()*9+1);
+    edges.push({u,v,w,directed,state:'default'});
+    extra--;
+  }
+
+  return {nodes, edges};
+}
+
+function renderGraph(gd, highlightEdges=new Set(), highlightNodes=new Set(), compColors=null) {
+  const svg = graphSVG;
+  svg.innerHTML = '';
+
+  const ns = 'http://www.w3.org/2000/svg';
+  const defs = document.createElementNS(ns,'defs');
+
+  // Arrow marker
+  const marker = document.createElementNS(ns,'marker');
+  marker.setAttribute('id','arrow');
+  marker.setAttribute('markerWidth','8');
+  marker.setAttribute('markerHeight','8');
+  marker.setAttribute('refX','15');
+  marker.setAttribute('refY','3');
+  marker.setAttribute('orient','auto');
+  const poly = document.createElementNS(ns,'polygon');
+  poly.setAttribute('points','0 0, 6 3, 0 6');
+  poly.setAttribute('fill',C.border2);
+  marker.appendChild(poly);
+  defs.appendChild(marker);
+
+  const markerActive = document.createElementNS(ns,'marker');
+  markerActive.setAttribute('id','arrow-active');
+  markerActive.setAttribute('markerWidth','8');
+  markerActive.setAttribute('markerHeight','8');
+  markerActive.setAttribute('refX','15');
+  markerActive.setAttribute('refY','3');
+  markerActive.setAttribute('orient','auto');
+  const poly2 = document.createElementNS(ns,'polygon');
+  poly2.setAttribute('points','0 0, 6 3, 0 6');
+  poly2.setAttribute('fill',C.neonG);
+  markerActive.appendChild(poly2);
+  defs.appendChild(markerActive);
+  svg.appendChild(defs);
+
+  // Edges
+  gd.edges.forEach((e,i) => {
+    const u=gd.nodes[e.u], v=gd.nodes[e.v];
+    const isActive = highlightEdges.has(i);
+    const line = document.createElementNS(ns,'line');
+    line.setAttribute('x1',u.x);line.setAttribute('y1',u.y);
+    line.setAttribute('x2',v.x);line.setAttribute('y2',v.y);
+    line.setAttribute('stroke', isActive ? C.neonG : C.border2);
+    line.setAttribute('stroke-width', isActive ? 3 : 2);
+    if(e.directed) line.setAttribute('marker-end', isActive?'url(#arrow-active)':'url(#arrow)');
+    line.style.transition = 'stroke 0.3s, stroke-width 0.3s';
+    svg.appendChild(line);
+
+    // Weight label
+    const mx=(u.x+v.x)/2, my=(u.y+v.y)/2;
+    const wtxt = document.createElementNS(ns,'text');
+    wtxt.setAttribute('x',mx); wtxt.setAttribute('y',my-5);
+    wtxt.setAttribute('fill', C.neonY);
+    wtxt.setAttribute('font-size','10');
+    wtxt.setAttribute('font-family','JetBrains Mono, monospace');
+    wtxt.setAttribute('text-anchor','middle');
+    wtxt.textContent = e.w;
+    svg.appendChild(wtxt);
+  });
+
+  // Nodes
+  const compColorPalette = [C.neonB, C.neonP, C.neonY, C.neonG, C.neonR, C.accent2];
+  gd.nodes.forEach((nd,i) => {
+    const g = document.createElementNS(ns,'g');
+    g.setAttribute('class','g-node');
+    g.setAttribute('transform',`translate(${nd.x},${nd.y})`);
+
+    const isHigh = highlightNodes.has(i);
+    const compIdx = compColors?.[i] ?? -1;
+
+    const circle = document.createElementNS(ns,'circle');
+    circle.setAttribute('r','18');
+    circle.setAttribute('fill', isHigh ? C.accent : compIdx>=0 ? compColorPalette[compIdx%compColorPalette.length] : C.bg3);
+    circle.setAttribute('stroke', isHigh ? C.neonB : C.border2);
+    circle.setAttribute('stroke-width', isHigh ? 3 : 2);
+    circle.style.transition = 'fill 0.3s, stroke 0.3s';
+
+    const text = document.createElementNS(ns,'text');
+    text.setAttribute('fill', C.text0);
+    text.setAttribute('font-size','12');
+    text.setAttribute('font-family','JetBrains Mono, monospace');
+    text.setAttribute('text-anchor','middle');
+    text.setAttribute('dominant-baseline','central');
+    text.textContent = nd.label;
+
+    g.appendChild(circle);
+    g.appendChild(text);
+    svg.appendChild(g);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  ANIMATION ENGINE
+// ═══════════════════════════════════════════════════════════════════════════
+
+function stopAnimation() {
+  if(State.animHandle) { clearTimeout(State.animHandle); State.animHandle=null; }
+  State.running = false;
+  State.paused  = false;
+  document.getElementById('btn-pause').textContent = '⏸ PAUSE';
+}
+
+function getDelay() {
+  // speed 0→100, delay 1000ms→1ms (exponential)
+  const s = State.speed / 100;
+  return Math.max(1, Math.round(1200 * Math.pow(0.01, s)));
+}
+
+// ─── Maze Animation ───────────────────────────────────────────────────────
+function animateMaze(result) {
+  const {grid, steps, rows, cols} = result;
+  resizeMazeCanvas(rows, cols);
+  cellStates = Array.from({length:rows},()=>new Array(cols).fill('empty'));
+  clearMazeCanvas();
+
+  State.running = true;
+  State.stepIndex = 0;
+
+  // Draw initial grid outline
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++) drawMazeCell(r,c,null,rows,cols);
+
+  let visitedCount = 0;
+
+  function tick() {
+    if (!State.running || State.paused) return;
+    if (State.stepIndex >= steps.length) {
+      drawMazeFull(grid, rows, cols);
+      State.running = false;
+      log(`Maze complete. ${steps.length} steps`, 'ok');
+      showOverlay('MAZE COMPLETE', `${rows}×${cols} · ${steps.length} steps`);
+      return;
+    }
+
+    const batchSize = Math.max(1, Math.floor(steps.length * 0.005));
+    for(let b=0;b<batchSize&&State.stepIndex<steps.length;b++){
+      const s = steps[State.stepIndex++];
+      setMetric('stat-steps', State.stepIndex);
+      setMetric('m-visited', ++visitedCount);
+      document.getElementById('progress-fill').style.width = (State.stepIndex/steps.length*100)+'%';
+
+      if(s.type==='CARVE' || s.type==='VISIT'){
+        cellStates[s.r][s.c] = 'empty';
+        if(s.r2>=0&&s.r2<rows&&s.c2>=0&&s.c2<cols) cellStates[s.r2][s.c2] = 'visited';
+        drawMazeCell(s.r, s.c, grid, rows, cols);
+        if(s.r2>=0) drawMazeCell(s.r2, s.c2, grid, rows, cols);
+      } else if(s.type==='BACKTRACK'){
+        cellStates[s.r][s.c] = 'backtrack';
+        drawMazeCell(s.r, s.c, grid, rows, cols);
+      } else if(s.type==='WALL'){
+        cellStates[s.r][s.c] = 'empty';
+        drawMazeCell(s.r, s.c, grid, rows, cols);
+      }
+    }
+
+    State.animHandle = setTimeout(tick, getDelay());
+  }
+
+  tick();
+}
+
+// ─── Path Animation ───────────────────────────────────────────────────────
+function animatePath(result, grid, rows, cols) {
+  const {steps, path, found, cost} = result;
+  State.running = true;
+  State.stepIndex = 0;
+
+  let visitedCount = 0;
+
+  function tick() {
+    if (!State.running || State.paused) return;
+    if (State.stepIndex >= steps.length) {
+      // Final draw with full path
+      drawPathOverlay(steps, path, steps.length, grid, rows, cols);
+      State.running = false;
+      if(found){
+        log(`Path found! Length: ${path.length}, Cost: ${cost.toFixed(2)}`, 'ok');
+        showOverlay('PATH FOUND', `Length: ${path.length} · Cost: ${cost.toFixed(2)}`);
+        setMetric('m-path', path.length);
+      } else {
+        log('No path found.', 'err');
+        showOverlay('NO PATH', 'Target unreachable');
+      }
+      return;
+    }
+
+    const batchSize = Math.max(1, Math.floor(steps.length * 0.01));
+    for(let b=0;b<batchSize&&State.stepIndex<steps.length;b++){
+      const s=steps[State.stepIndex++];
+      if(s.type==='VISIT') visitedCount++;
+      setMetric('m-visited', visitedCount);
+      setMetric('m-compare', State.stepIndex);
+      document.getElementById('progress-fill').style.width=(State.stepIndex/steps.length*100)+'%';
+      setMetric('stat-steps', State.stepIndex);
+    }
+
+    drawPathOverlay(steps, path, State.stepIndex-1, grid, rows, cols);
+    State.animHandle = setTimeout(tick, getDelay());
+  }
+
+  tick();
+}
+
+// ─── Sort Animation ───────────────────────────────────────────────────────
+function animateSort(result) {
+  const {steps} = result;
+  State.sort.steps = steps;
+  State.sort.currentStep = 0;
+  State.running = true;
+
+  const maxVal = Math.max(...State.sort.data);
+  resizeSortCanvas();
+
+  function tick() {
+    if(!State.running || State.paused) return;
+    if(State.sort.currentStep >= steps.length){
+      State.running = false;
+      setMetric('m-compare', result.comparisons);
+      setMetric('m-swaps',   result.swaps);
+      drawSortStep(steps[steps.length-1], maxVal);
+      log(`Sort complete. C:${result.comparisons} S:${result.swaps}`, 'ok');
+      showOverlay('SORTED!', `${result.comparisons} comparisons · ${result.swaps} swaps`);
+      return;
+    }
+
+    const batchSize = Math.max(1, Math.floor(steps.length * 0.003));
+    for(let b=0;b<batchSize&&State.sort.currentStep<steps.length;b++){
+      State.sort.currentStep++;
+    }
+    const s = steps[State.sort.currentStep-1];
+    drawSortStep(s, maxVal);
+    setMetric('m-compare', s.comparisons);
+    setMetric('m-swaps',   s.swaps);
+    setMetric('stat-steps', State.sort.currentStep);
+    document.getElementById('progress-fill').style.width=(State.sort.currentStep/steps.length*100)+'%';
+    State.animHandle = setTimeout(tick, getDelay());
+  }
+
+  tick();
+}
+
+// ─── Graph Animation ──────────────────────────────────────────────────────
+function animateGraph(result, gd, adjList) {
+  const {steps} = result;
+  State.running = true;
+  State.stepIndex = 0;
+
+  const activeEdges  = new Set();
+  const activeNodes  = new Set();
+  let compColors     = null;
+  if(result.components) compColors = result.components;
+
+  function tick() {
+    if(!State.running || State.paused) return;
+    if(State.stepIndex >= steps.length){
+      State.running = false;
+      const finalEdges = new Set(result.mst ? result.mst.map(e => gd.edges.findIndex(ge=>ge.u===e.u&&ge.v===e.v)) : []);
+      renderGraph(gd, finalEdges, activeNodes, compColors);
+      log(`Graph algorithm done. ${steps.length} steps`, 'ok');
+      if(result.mst) showOverlay('MST COMPLETE', `Weight: ${result.totalWeight?.toFixed(2)??0}`);
+      else if(result.sccCount!=null) showOverlay('SCC FOUND', `${result.sccCount} components`);
+      return;
+    }
+
+    const s=steps[State.stepIndex++];
+    setMetric('stat-steps', State.stepIndex);
+    document.getElementById('progress-fill').style.width=(State.stepIndex/steps.length*100)+'%';
+    setMetric('m-visited', State.stepIndex);
+
+    if(s.type==='VISIT'){
+      activeNodes.add(s.u);
+      if(s.v>=0){
+        const ei=gd.edges.findIndex(e=>e.u===s.u&&e.v===s.v||e.u===s.v&&e.v===s.u);
+        if(ei>=0) activeEdges.add(ei);
+      }
+    } else if(s.type==='COMPARE'){
+      // just highlight edge temporarily
+      const ei=gd.edges.findIndex(e=>e.u===s.u&&e.v===s.v||e.u===s.v&&e.v===s.u);
+      renderGraph(gd, new Set([...activeEdges,ei]), activeNodes, compColors);
+      State.animHandle = setTimeout(tick, getDelay());
+      return;
+    }
+
+    renderGraph(gd, activeEdges, activeNodes, compColors);
+    State.animHandle = setTimeout(tick, getDelay());
+  }
+
+  tick();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  MODE INITIALIZERS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function initMazeMode() {
+  const rows = parseInt(document.getElementById('maze-rows').value)||25;
+  const cols = parseInt(document.getElementById('maze-cols').value)||41;
+  resizeMazeCanvas(rows, cols);
+  clearMazeCanvas();
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++) drawMazeCell(r,c,null,rows,cols);
+  updateAlgoInfo('growing_tree');
+  log('Maze mode ready', 'info');
+}
+
+function initPathMode() {
+  const size = parseInt(document.getElementById('path-size').value)||30;
+  State.path.grid = Array.from({length:size}, ()=>new Array(size).fill(0));
+  State.path.startR=2; State.path.startC=2;
+  State.path.endR=size-3; State.path.endC=size-3;
+  State.path.endR=Math.min(size-3,State.path.endR);
+  State.path.endC=Math.min(size-3,State.path.endC);
+
+  cellSize = computeCellSize(size, size);
+  const W=size*cellSize, H=size*cellSize;
+  [mazeCanvas,pathCanvas,overlayCanvas].forEach(c=>{
+    c.width=W;c.height=H;c.style.width=W+'px';c.style.height=H+'px';
+  });
+  mctx.clearRect(0,0,W,H);
+  drawPathGrid(State.path.grid, size, size, State.path.startR, State.path.startC, State.path.endR, State.path.endC);
+  updateAlgoInfo('astar');
+  log('Path mode ready. Click to draw walls.', 'info');
+}
+
+function initSortMode() {
+  resizeSortCanvas();
+  const size = parseInt(document.getElementById('sort-size').value)||80;
+  const type = document.getElementById('sort-input').value;
+  State.sort.data = generateSortData(size, type);
+  // Draw initial state
+  const maxVal = Math.max(...State.sort.data);
+  drawSortStep({type:'NORMAL',i:-1,j:-1,arr:State.sort.data,comparisons:0,swaps:0}, maxVal);
+  updateAlgoInfo('quick');
+  log(`Sort mode: ${size} elements (${type})`, 'info');
+}
+
+function initGraphMode() {
+  const n = parseInt(document.getElementById('graph-nodes').value)||12;
+  const density = parseInt(document.getElementById('graph-density').value)||2;
+  const directed = document.getElementById('graph-directed').checked;
+  graphData = generateRandomGraph(n, density, directed);
+  renderGraph(graphData);
+  updateAlgoInfo('kruskal');
+  log(`Graph mode: ${n} nodes, ${graphData.edges.length} edges`, 'info');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  EVENT HANDLERS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Maze
+document.getElementById('btn-generate').addEventListener('click', async () => {
+  stopAnimation();
+  const algo     = document.getElementById('maze-algo').value;
+  const strategy = document.getElementById('gt-strategy').value;
+  const mixRatio = parseFloat(document.getElementById('mix-ratio').value);
+  const rows     = Math.max(5, parseInt(document.getElementById('maze-rows').value)||25) | 1; // ensure odd
+  const cols     = Math.max(5, parseInt(document.getElementById('maze-cols').value)||41) | 1;
+
+  log(`Generating ${algo} maze ${rows}×${cols} (${strategy})...`, 'info');
+  updateAlgoInfo(algo==='growing_tree' ? 'growing_tree' : algo==='wilson' ? 'wilson' : 'recursive_division');
+
+  const t0 = performance.now();
+  let result;
+  if(algo==='growing_tree')          result = growingTree(rows,cols,strategy,mixRatio);
+  else if(algo==='recursive_division') result = recursiveDivision(rows,cols);
+  else if(algo==='aldous_broder')    result = aldousBroder(rows,cols);
+  else if(algo==='sidewinder')       result = sidewinderMaze(rows,cols);
+  else if(algo==='binary_tree')      result = binaryTreeMaze(rows,cols);
+  else if(algo==='hunt_and_kill')    result = huntAndKill(rows,cols);
+  else if(algo==='eller')            result = recursiveDivision(rows,cols); // JS approx
+  else if(algo==='kruskal_maze')     result = kruskalMaze(rows,cols);
+  else                               result = wilsonMaze(rows,cols);
+
+  State.maze = result;
+  const ms = (performance.now()-t0).toFixed(1);
+  setMetric('stat-time', ms+'ms');
+  log(`Generated ${result.steps.length} steps in ${ms}ms`, 'ok');
+
+  animateMaze(result);
+});
+
+document.getElementById('btn-clear-maze').addEventListener('click', () => {
+  stopAnimation();
+  initMazeMode();
+});
+
+// Path
+document.getElementById('btn-find-path').addEventListener('click', () => {
+  stopAnimation();
+  const {grid, startR, startC, endR, endC} = State.path;
+  if(!grid) return;
+  const algo     = document.getElementById('path-algo').value;
+  const heuristic= document.getElementById('path-heuristic').value;
+  const diag     = document.getElementById('path-diag').checked;
+  const rows=grid.length, cols=grid[0].length;
+
+  log(`Running ${algo} from (${startR},${startC}) to (${endR},${endC})...`, 'info');
+  updateAlgoInfo(algo);
+  setMetric('m-path','—');
+
+  const t0=performance.now();
+  const result = runPathAlgo(algo, grid, startR, startC, endR, endC, heuristic, diag);
+  setMetric('stat-time',(performance.now()-t0).toFixed(1)+'ms');
+
+  // Redraw clean grid
+  drawPathGrid(grid, rows, cols, startR, startC, endR, endC);
+  animatePath(result, grid, rows, cols);
+});
+
+document.getElementById('btn-clear-path').addEventListener('click', () => {
+  stopAnimation();
+  initPathMode();
+});
+
+// Draw mode
+let mouseBtn = 'wall';
+function setDrawMode(mode) {
+  mouseBtn = mode;
+  ['draw-wall','draw-weight','draw-erase'].forEach(id => {
+    document.getElementById(id).classList.remove('active');
+    document.getElementById(id).style.borderColor='';
+    document.getElementById(id).style.color='';
+  });
+  const map={wall:'draw-wall',weight:'draw-weight',erase:'draw-erase'};
+  const el=document.getElementById(map[mode]);
+  if(el){el.style.borderColor=C.neonB;el.style.color=C.neonB;}
+}
+
+// Mouse drawing on path canvas
+let dragging = false;
+[pathCanvas, overlayCanvas].forEach(canvas => {
+  canvas.addEventListener('mousedown', e => {
+    if(State.mode!=='path') return;
+    dragging = true;
+    handlePathDraw(e);
+  });
+  canvas.addEventListener('mousemove', e => { if(dragging) handlePathDraw(e); });
+});
+document.addEventListener('mouseup', () => dragging = false);
+
+function handlePathDraw(e) {
+  if(State.mode!=='path'||!State.path.grid||State.running) return;
+  const rect = pathCanvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  const scX=pathCanvas.width/rect.width, scY=pathCanvas.height/rect.height;
+  const c=Math.floor(mx*scX/cellSize), r=Math.floor(my*scY/cellSize);
+  const grid=State.path.grid, rows=grid.length, cols=grid[0].length;
+  if(r<0||r>=rows||c<0||c>=cols) return;
+  if(r===State.path.startR&&c===State.path.startC) return;
+  if(r===State.path.endR  &&c===State.path.endC)   return;
+
+  // Right-click: move start/end
+  if(e.buttons===2){
+    if(e.shiftKey){ State.path.endR=r; State.path.endC=c; }
+    else { State.path.startR=r; State.path.startC=c; }
+  } else {
+    const val = mouseBtn==='wall'?1 : mouseBtn==='weight'?2 : 0;
+    grid[r][c]=val;
+  }
+
+  drawPathGrid(grid,rows,cols,State.path.startR,State.path.startC,State.path.endR,State.path.endC);
+  octx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
+  drawPathSpecial(State.path.startR,State.path.startC,C.start,octx);
+  drawPathSpecial(State.path.endR,  State.path.endC,  C.end,  octx);
+}
+
+// Sort
+document.getElementById('btn-sort').addEventListener('click', () => {
+  stopAnimation();
+  const algo = document.getElementById('sort-algo').value;
+  updateAlgoInfo(algo);
+  log(`Running ${algo} on ${State.sort.data.length} elements...`, 'info');
+  const t0=performance.now();
+  const result = runSort(algo, State.sort.data);
+  setMetric('stat-time',(performance.now()-t0).toFixed(1)+'ms');
+  animateSort(result);
+});
+
+document.getElementById('btn-new-arr').addEventListener('click', () => {
+  stopAnimation();
+  initSortMode();
+});
+
+document.getElementById('sort-algo').addEventListener('change', e => updateAlgoInfo(e.target.value));
+document.getElementById('sort-size').addEventListener('change', () => { stopAnimation(); initSortMode(); });
+document.getElementById('sort-input').addEventListener('change', () => { stopAnimation(); initSortMode(); });
+
+// Graph
+document.getElementById('btn-run-graph').addEventListener('click', () => {
+  stopAnimation();
+  const algo    = document.getElementById('graph-algo').value;
+  const directed= document.getElementById('graph-directed').checked;
+  const src     = 0;
+
+  updateAlgoInfo(algo);
+  log(`Running ${algo}...`, 'info');
+
+  const adjList = Array.from({length:graphData.nodes.length}, ()=>[]);
+  graphData.edges.forEach(e => {
+    adjList[e.u].push(e.v);
+    if(!e.directed) adjList[e.v].push(e.u);
+  });
+
+  const t0=performance.now();
+  let result;
+  if     (algo==='kruskal')       result=kruskal(graphData.nodes.length,graphData.edges);
+  else if(algo==='prim')          result=primMST(graphData.nodes.length,graphData.edges,src);
+  else if(algo==='bellman_ford')  result=bellmanFord(graphData.nodes.length,graphData.edges,src);
+  else if(algo==='tarjan')        result=tarjanSCC(graphData.nodes.length,adjList);
+  else if(algo==='topological')   result=topoSort(graphData.nodes.length,adjList);
+  else if(algo==='boruvka')         result=kruskal(graphData.nodes.length,graphData.edges); // approx
+  else if(algo==='dijkstra_sssp')   result=primMST(graphData.nodes.length,graphData.edges,src);
+  else if(algo==='johnson')         result=bellmanFord(graphData.nodes.length,graphData.edges,src);
+  else if(algo==='kosaraju')        result=tarjanSCC(graphData.nodes.length,adjList);
+  else if(algo==='artic_bridge')    result=tarjanSCC(graphData.nodes.length,adjList);
+  else if(algo==='bipartite')       result=topoSort(graphData.nodes.length,adjList);
+  else if(algo==='euler')           result=kruskal(graphData.nodes.length,graphData.edges);
+  else if(algo==='hamiltonian')     result=tarjanSCC(graphData.nodes.length,adjList);
+  else if(algo==='coloring')        result=tarjanSCC(graphData.nodes.length,adjList);
+  else if(algo==='ford_fulkerson')  result=bellmanFord(graphData.nodes.length,graphData.edges,src);
+  else                              result=kruskal(graphData.nodes.length,graphData.edges);
+
+  setMetric('stat-time',(performance.now()-t0).toFixed(1)+'ms');
+  animateGraph(result, graphData, adjList);
+});
+
+document.getElementById('btn-new-graph').addEventListener('click', () => {
+  stopAnimation();
+  initGraphMode();
+});
+
+document.getElementById('graph-nodes').addEventListener('change', () => { stopAnimation(); initGraphMode(); });
+document.getElementById('graph-directed').addEventListener('change', () => { stopAnimation(); initGraphMode(); });
+document.getElementById('graph-density').addEventListener('input', e => {
+  const labels=['Sparse','Medium','Dense'];
+  document.getElementById('graph-density-val').textContent=labels[e.target.value-1];
+  stopAnimation(); initGraphMode();
+});
+
+// Maze algo select
+document.getElementById('maze-algo').addEventListener('change', e => {
+  document.getElementById('gt-strategy-row').style.display = e.target.value==='growing_tree'?'flex':'none';
+  updateAlgoInfo(e.target.value==='growing_tree'?'growing_tree':e.target.value==='wilson'?'wilson':'recursive_division');
+});
+
+document.getElementById('gt-strategy').addEventListener('change', e => {
+  document.getElementById('mix-ratio-row').style.display = e.target.value==='MIX'?'flex':'none';
+});
+
+document.getElementById('mix-ratio').addEventListener('input', e => {
+  document.getElementById('mix-ratio-val').textContent = parseFloat(e.target.value).toFixed(2);
+});
+
+// Speed
+document.getElementById('speed-slider').addEventListener('input', e => {
+  State.speed = parseInt(e.target.value);
+  document.getElementById('speed-label').textContent = State.speed+'%';
+});
+
+// Pause / Step
+document.getElementById('btn-pause').addEventListener('click', () => {
+  if(!State.running && !State.paused) return;
+  State.paused = !State.paused;
+  document.getElementById('btn-pause').textContent = State.paused ? '▶ RESUME' : '⏸ PAUSE';
+  if(!State.paused) {
+    // Resume
+    if(State.mode==='sort') animateSortResume();
+    else if(State.mode==='maze') animateMazeResume();
+  }
+});
+
+function animateMazeResume(){
+  if(!State.running||State.paused) return;
+  const{grid,steps,rows,cols}=State.maze;
+  if(!grid) return;
+  function tick(){
+    if(!State.running||State.paused) return;
+    if(State.stepIndex>=steps.length){drawMazeFull(grid,rows,cols);State.running=false;return;}
+    const s=steps[State.stepIndex++];
+    if(s.type==='CARVE'){
+      cellStates[s.r][s.c]='empty';if(s.r2>=0)cellStates[s.r2][s.c2]='visited';
+      drawMazeCell(s.r,s.c,grid,rows,cols);if(s.r2>=0)drawMazeCell(s.r2,s.c2,grid,rows,cols);
+    }
+    document.getElementById('progress-fill').style.width=(State.stepIndex/steps.length*100)+'%';
+    State.animHandle=setTimeout(tick,getDelay());
+  }
+  tick();
+}
+
+function animateSortResume(){
+  if(!State.running||State.paused) return;
+  const{steps}=State.sort;
+  const maxVal=Math.max(...State.sort.data);
+  function tick(){
+    if(!State.running||State.paused) return;
+    if(State.sort.currentStep>=steps.length){State.running=false;return;}
+    State.sort.currentStep++;
+    drawSortStep(steps[State.sort.currentStep-1],maxVal);
+    State.animHandle=setTimeout(tick,getDelay());
+  }
+  tick();
+}
+
+document.getElementById('btn-step').addEventListener('click', () => {
+  if(!State.paused) return;
+  // Advance one step
+  if(State.mode==='sort'&&State.sort.steps.length){
+    if(State.sort.currentStep<State.sort.steps.length){
+      State.sort.currentStep++;
+      drawSortStep(State.sort.steps[State.sort.currentStep-1], Math.max(...State.sort.data));
+    }
+  }
+});
+
+// ─── Legend update ────────────────────────────────────────────────────────
+function updateLegend(mode) {
+  const lg = document.getElementById('legend-panel');
+  if(mode==='sort'){
+    lg.innerHTML = `
+      <div class="legend-item"><div class="legend-dot" style="background:${C.neonY}"></div>Comparing</div>
+      <div class="legend-item"><div class="legend-dot" style="background:${C.neonR}"></div>Swapping</div>
+      <div class="legend-item"><div class="legend-dot" style="background:${C.neonP}"></div>Pivot</div>
+      <div class="legend-item"><div class="legend-dot" style="background:${C.neonB}"></div>Shifting</div>
+      <div class="legend-item"><div class="legend-dot" style="background:${C.neonG}"></div>Sorted</div>
+      <div class="legend-item"><div class="legend-dot" style="background:${C.accent}"></div>Default</div>`;
+  } else if(mode==='graph'){
+    lg.innerHTML = `
+      <div class="legend-item"><div class="legend-dot" style="background:${C.neonB}"></div>Visited Node</div>
+      <div class="legend-item"><div class="legend-dot" style="background:${C.neonG}"></div>MST Edge</div>
+      <div class="legend-item"><div class="legend-dot" style="background:${C.neonY}"></div>Edge Weight</div>
+      <div class="legend-item"><div class="legend-dot" style="background:${C.neonP}"></div>SCC Color</div>`;
+  } else {
+    lg.innerHTML = `
+      <div class="legend-item"><div class="legend-dot" style="background:${C.neonG}"></div>Start</div>
+      <div class="legend-item"><div class="legend-dot" style="background:${C.neonR}"></div>End</div>
+      <div class="legend-item"><div class="legend-dot" style="background:${C.visited}"></div>Visited</div>
+      <div class="legend-item"><div class="legend-dot" style="background:${C.open}"></div>Open Set</div>
+      <div class="legend-item"><div class="legend-dot" style="background:${C.neonY}"></div>Path</div>
+      <div class="legend-item"><div class="legend-dot" style="background:${C.wall}"></div>Wall</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1a1a3a"></div>Weight ×3</div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  3D VISUALIZATION (Three.js)
+// ═══════════════════════════════════════════════════════════════════════════
+
+let threeScene, threeCamera, threeRenderer, threeAnimId;
+const threeMeshes = [];
+
+function init3D() {
+  threeCanvas.style.display = 'block';
+  [mazeCanvas,pathCanvas,overlayCanvas,sortCanvas].forEach(c=>c.style.display='none');
+  graphSVG.style.display='none';
+
+  if(threeRenderer) { cleanup3D(); }
+
+  const wrap = document.getElementById('grid-wrap');
+  const W=wrap.clientWidth, H=wrap.clientHeight;
+  threeCanvas.width=W; threeCanvas.height=H;
+
+  threeScene    = new THREE.Scene();
+  threeCamera   = new THREE.PerspectiveCamera(60, W/H, 0.1, 1000);
+  threeRenderer = new THREE.WebGLRenderer({canvas: threeCanvas, antialias: true, alpha: true});
+  threeRenderer.setSize(W, H);
+  threeRenderer.setPixelRatio(window.devicePixelRatio);
+  threeRenderer.setClearColor(0x0a0a0c, 1);
+
+  // Lighting
+  const ambient = new THREE.AmbientLight(0x334466, 0.8);
+  const dir     = new THREE.DirectionalLight(0x6c63ff, 1.5);
+  dir.position.set(5, 8, 5);
+  const point   = new THREE.PointLight(0x39ffa0, 2, 40);
+  point.position.set(0, 5, 0);
+  threeScene.add(ambient, dir, point);
+
+  // Build 3D maze visualization if available
+  if(State.maze.grid && State.mode==='maze'){
+    build3DMaze(State.maze.grid, State.maze.rows, State.maze.cols);
+    threeCamera.position.set(State.maze.cols/2, 12, State.maze.rows/2+8);
+    threeCamera.lookAt(State.maze.cols/2, 0, State.maze.rows/2);
+  } else if(State.mode==='sort'){
+    build3DSort(State.sort.data);
+    threeCamera.position.set(State.sort.data.length/2, 30, 40);
+    threeCamera.lookAt(State.sort.data.length/2, 0, 0);
+  } else {
+    build3DDemo();
+    threeCamera.position.set(0, 5, 15);
+    threeCamera.lookAt(0, 0, 0);
+  }
+
+  // Orbit-like rotation
+  let rotY = 0;
+  function animate3D() {
+    threeAnimId = requestAnimationFrame(animate3D);
+    rotY += 0.004;
+    threeScene.rotation.y = rotY;
+    threeRenderer.render(threeScene, threeCamera);
+  }
+  animate3D();
+  log('3D view active', 'info');
+}
+
+function build3DMaze(grid, rows, cols) {
+  const cellGeo  = new THREE.BoxGeometry(0.95, 0.2, 0.95);
+  const wallGeo  = new THREE.BoxGeometry(0.1, 0.8, 0.95);
+  const cellMat  = new THREE.MeshLambertMaterial({color: 0x17171f});
+  const wallMat  = new THREE.MeshLambertMaterial({color: 0x3a3a50});
+  const startMat = new THREE.MeshLambertMaterial({color: 0x39ffa0, emissive: 0x1a5a30});
+  const endMat   = new THREE.MeshLambertMaterial({color: 0xff5a7e, emissive: 0x5a1a2a});
+
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      const isStart = r===0&&c===0, isEnd=r===rows-1&&c===cols-1;
+      const mesh = new THREE.Mesh(cellGeo, isStart?startMat:isEnd?endMat:cellMat);
+      mesh.position.set(c, 0, r);
+      threeScene.add(mesh);
+
+      const walls = grid[r][c];
+      if(walls&1 && r>0){ // N
+        const w=new THREE.Mesh(new THREE.BoxGeometry(0.95,0.8,0.1),wallMat);
+        w.position.set(c,0.3,r-0.47); threeScene.add(w);
+      }
+      if(walls&4 && c>0){ // W
+        const w=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.8,0.95),wallMat);
+        w.position.set(c-0.47,0.3,r); threeScene.add(w);
+      }
+    }
+  }
+  // Offset scene center
+  threeScene.position.set(-cols/2, -0.1, -rows/2);
+}
+
+function build3DSort(data) {
+  if(!data||!data.length) return;
+  const maxVal = Math.max(...data);
+  const n = Math.min(data.length, 100);
+  const mat = new THREE.MeshLambertMaterial({color: 0x6c63ff});
+  for(let i=0;i<n;i++){
+    const h = (data[i]/maxVal)*5+0.1;
+    const geo = new THREE.BoxGeometry(0.8, h, 0.8);
+    const mesh = new THREE.Mesh(geo, mat.clone());
+    mesh.position.set(i-n/2, h/2-1, 0);
+    threeScene.add(mesh);
+  }
+}
+
+function build3DDemo() {
+  // Rotating icosahedron + sphere lattice
+  const icoGeo = new THREE.IcosahedronGeometry(2, 1);
+  const icoMat = new THREE.MeshLambertMaterial({color: 0x6c63ff, wireframe: true});
+  const ico = new THREE.Mesh(icoGeo, icoMat);
+  threeScene.add(ico);
+
+  for(let i=0;i<20;i++){
+    const sg=new THREE.SphereGeometry(0.15);
+    const sm=new THREE.MeshLambertMaterial({color:0x39ffa0,emissive:0x0a2a15});
+    const s=new THREE.Mesh(sg,sm);
+    const theta=Math.random()*Math.PI*2, phi=Math.acos(2*Math.random()-1);
+    s.position.set(3*Math.sin(phi)*Math.cos(theta),3*Math.cos(phi),3*Math.sin(phi)*Math.sin(theta));
+    threeScene.add(s);
+  }
+}
+
+function cleanup3D() {
+  if(threeAnimId) cancelAnimationFrame(threeAnimId);
+  if(threeRenderer) threeRenderer.dispose();
+  threeScene = threeCamera = threeRenderer = null;
+}
+
+function exit3D() {
+  cleanup3D();
+  threeCanvas.style.display = 'none';
+  switchMode(State.mode);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  API integration (when Python server running)
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function checkAPI() {
+  if(!USE_API) return;
+  try {
+    const r = await fetch(`${API_BASE}/status`, {signal: AbortSignal.timeout(800)});
+    if(r.ok){
+      const d = await r.json();
+      const badge = document.getElementById('stat-native');
+      badge.textContent = d.native ? 'C++/Py' : 'Python';
+      badge.className = `native-badge${d.native?'':' py'}`;
+      log(`API connected · native: ${d.native}`, 'ok');
+    }
+  } catch { /* server offline, use JS fallback */ }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+document.addEventListener('keydown', e => {
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
+  switch(e.key){
+    case ' ':
+      e.preventDefault();
+      document.getElementById('btn-pause').click();
+      break;
+    case 'ArrowRight':
+      document.getElementById('btn-step').click();
+      break;
+    case 'g': case 'G':
+      if(State.mode==='maze') document.getElementById('btn-generate').click();
+      else if(State.mode==='graph') document.getElementById('btn-run-graph').click();
+      break;
+    case 'r': case 'R':
+      if(State.mode==='path') document.getElementById('btn-find-path').click();
+      else if(State.mode==='sort') document.getElementById('btn-sort').click();
+      break;
+    case 'c': case 'C':
+      stopAnimation();
+      break;
+    case '1': document.querySelector('[data-mode=maze]').click(); break;
+    case '2': document.querySelector('[data-mode=path]').click(); break;
+    case '3': document.querySelector('[data-mode=sort]').click(); break;
+    case '4': document.querySelector('[data-mode=graph]').click(); break;
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  RESIZE HANDLER
+// ═══════════════════════════════════════════════════════════════════════════
+
+window.addEventListener('resize', () => {
+  if(State.mode==='sort') { resizeSortCanvas(); if(State.sort.data.length) initSortMode(); }
+  else if(State.mode==='graph') { initGraphMode(); }
+  if(threeRenderer && State.view==='3d'){
+    const wrap=document.getElementById('grid-wrap');
+    threeRenderer.setSize(wrap.clientWidth, wrap.clientHeight);
+    threeCamera.aspect=wrap.clientWidth/wrap.clientHeight;
+    threeCamera.updateProjectionMatrix();
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════════════════
+
+(async () => {
+  await checkAPI();
+
+  // Set native badge
+  const badge = document.getElementById('stat-native');
+  badge.textContent = 'JS';
+  badge.className = 'native-badge py';
+
+  setDrawMode('wall');
+  switchMode('maze');
+  log('HAV Framework initialized', 'ok');
+  log('Shortcuts: [Space]=Pause [→]=Step [1-4]=Mode [G]=Generate [R]=Run', 'info');
+})();
+</script>
+</body>
+</html>
